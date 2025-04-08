@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/erigontech/erigon-lib/common"
-	"github.com/erigontech/erigon/zk/datastream/proto/github.com/0xPolygonHermez/zkevm-node/state/datastream"
+	"github.com/erigontech/erigon/zk/datastream/proto/datastream"
 	"github.com/erigontech/erigon/zk/datastream/types"
 	"github.com/stretchr/testify/require"
 	"gotest.tools/v3/assert"

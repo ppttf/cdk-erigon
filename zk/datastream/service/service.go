@@ -1,0 +1,113 @@
+package service
+
+import (
+	"context"
+	"sync"
+
+	libcommon "github.com/erigontech/erigon-lib/common"
+	"github.com/erigontech/erigon-lib/log/v3"
+
+	// Import from the local relative path based on the new go_package
+	servicepb "github.com/erigontech/erigon/zk/datastream/proto/datastream"
+	"github.com/erigontech/erigon/zk/datastream/server"
+	"github.com/erigontech/erigon/zk/txpool"
+	"google.golang.org/grpc"
+)
+
+// DataStreamServer implements the DataStreamService gRPC interface
+type DataStreamServer struct {
+	servicepb.UnimplementedDataStreamServiceServer
+	dataServer server.DataStreamServer
+	txPool     *txpool.TxPool
+	logger     log.Logger
+
+	// For managing active stream connections
+	streamsMu sync.RWMutex
+	txStreams map[string]chan *servicepb.TransactionResponse
+}
+
+// NewDataStreamServer creates a new DataStreamServer instance
+func NewDataStreamServer(dataServer server.DataStreamServer, txPool *txpool.TxPool, logger log.Logger) *DataStreamServer {
+	return &DataStreamServer{
+		dataServer: dataServer,
+		txPool:     txPool,
+		logger:     logger,
+		txStreams:  make(map[string]chan *servicepb.TransactionResponse),
+	}
+}
+
+// GetTransactionStream implements the DataStreamService.GetTransactionStream method
+func (s *DataStreamServer) GetTransactionStream(req *servicepb.TransactionStreamRequest, stream servicepb.DataStreamService_GetTransactionStreamServer) error {
+	// Create a unique channel for this stream
+	streamID := generateStreamID()
+
+	// Create buffered channel for this stream
+	txChan := make(chan *servicepb.TransactionResponse, 100)
+
+	// Register the stream
+	s.streamsMu.Lock()
+	s.txStreams[streamID] = txChan
+	s.streamsMu.Unlock()
+
+	// Cleanup when the stream ends
+	defer func() {
+		s.streamsMu.Lock()
+		delete(s.txStreams, streamID)
+		close(txChan)
+		s.streamsMu.Unlock()
+	}()
+
+	// Process transactions from the channel and send them to the client
+	for {
+		select {
+		case txResp, ok := <-txChan:
+			if !ok {
+				// Channel closed
+				return nil
+			}
+			if err := stream.Send(txResp); err != nil {
+				s.logger.Warn("Failed to send transaction to stream", "err", err)
+				return err
+			}
+		case <-stream.Context().Done():
+			// Client disconnected
+			return stream.Context().Err()
+		}
+	}
+}
+
+// GetStreamInfo implements the DataStreamService.GetStreamInfo method
+func (s *DataStreamServer) GetStreamInfo(ctx context.Context, req *servicepb.StreamInfoRequest) (*servicepb.StreamInfoResponse, error) {
+	// Implementation will go here
+	return &servicepb.StreamInfoResponse{
+		DatastreamVersion: "1.0", // Initial version
+	}, nil
+}
+
+// BroadcastTransaction broadcasts a transaction to all active streams
+func (s *DataStreamServer) BroadcastTransaction(txResp *servicepb.TransactionResponse) {
+	s.streamsMu.RLock()
+	defer s.streamsMu.RUnlock()
+
+	// Send to all active streams
+	for _, ch := range s.txStreams {
+		select {
+		case ch <- txResp:
+			// Successfully sent
+		default:
+			// Channel full, transaction will be dropped for this client
+			// This prevents slow clients from blocking the system
+		}
+	}
+}
+
+// RegisterWithGrpcServer registers the DataStreamServer with a gRPC server
+func RegisterWithGrpcServer(grpcServer *grpc.Server, dataStreamServer *DataStreamServer) {
+	servicepb.RegisterDataStreamServiceServer(grpcServer, dataStreamServer)
+}
+
+// Helper function to generate a unique stream ID
+// In a real implementation, you would use something more robust
+func generateStreamID() string {
+	return "stream-" + libcommon.Hash{}.String()
+}

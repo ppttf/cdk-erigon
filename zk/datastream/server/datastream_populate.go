@@ -12,7 +12,7 @@ import (
 	"github.com/erigontech/erigon/core/rawdb"
 	eritypes "github.com/erigontech/erigon/core/types"
 	"github.com/erigontech/erigon/eth/stagedsync/stages"
-	"github.com/erigontech/erigon/zk/datastream/proto/github.com/0xPolygonHermez/zkevm-node/state/datastream"
+	"github.com/erigontech/erigon/zk/datastream/proto/datastream"
 	"github.com/erigontech/erigon/zk/hermez_db"
 	"github.com/erigontech/erigon/zk/utils"
 )
