@@ -1,4 +1,4 @@
-package service
+package grpcdatastreamservice
 
 import (
 	"context"
@@ -9,17 +9,13 @@ import (
 
 	// Import from the local relative path based on the new go_package
 	servicepb "github.com/erigontech/erigon/zk/datastream/proto/datastream"
-	"github.com/erigontech/erigon/zk/datastream/server"
-	"github.com/erigontech/erigon/zk/txpool"
 	"google.golang.org/grpc"
 )
 
 // DataStreamServer implements the DataStreamService gRPC interface
 type DataStreamServer struct {
 	servicepb.UnimplementedDataStreamServiceServer
-	dataServer server.DataStreamServer
-	txPool     *txpool.TxPool
-	logger     log.Logger
+	logger log.Logger
 
 	// For managing active stream connections
 	streamsMu sync.RWMutex
@@ -27,12 +23,10 @@ type DataStreamServer struct {
 }
 
 // NewDataStreamServer creates a new DataStreamServer instance
-func NewDataStreamServer(dataServer server.DataStreamServer, txPool *txpool.TxPool, logger log.Logger) *DataStreamServer {
+func NewDataStreamServer(logger log.Logger) *DataStreamServer {
 	return &DataStreamServer{
-		dataServer: dataServer,
-		txPool:     txPool,
-		logger:     logger,
-		txStreams:  make(map[string]chan *servicepb.TransactionResponse),
+		txStreams: make(map[string]chan *servicepb.TransactionResponse),
+		logger:    logger,
 	}
 }
 

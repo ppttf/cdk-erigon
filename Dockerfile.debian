@@ -90,6 +90,7 @@ EXPOSE 8545 \
        8080 \
        9090 \
        6060 \
+       7070 \
        7900
 
 # https://github.com/opencontainers/image-spec/blob/main/annotations.md

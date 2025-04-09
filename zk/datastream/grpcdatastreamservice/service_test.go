@@ -1,4 +1,4 @@
-package service
+package grpcdatastreamservice
 
 import (
 	"context"
@@ -79,7 +79,7 @@ func TestGetStreamInfo(t *testing.T) {
 	logger := log.New()
 
 	// Create service with nil dependencies (they're not used in GetStreamInfo)
-	srv := NewDataStreamServer(nil, nil, logger)
+	srv := NewDataStreamServer(logger)
 	require.NotNil(t, srv, "Service should be created")
 
 	// Call the method
@@ -100,7 +100,7 @@ func TestBroadcastTransaction(t *testing.T) {
 	logger := log.New()
 
 	// Create service with nil dependencies (they're not directly used in broadcast)
-	srv := NewDataStreamServer(nil, nil, logger)
+	srv := NewDataStreamServer(logger)
 
 	// Manually add a stream channel
 	testStream := make(chan *datastream.TransactionResponse, 10)
@@ -141,7 +141,7 @@ func TestBroadcastToFullChannelDoesntBlock(t *testing.T) {
 	logger := log.New()
 
 	// Create service
-	srv := NewDataStreamServer(nil, nil, logger)
+	srv := NewDataStreamServer(logger)
 
 	// Create a channel with capacity 1
 	testStream := make(chan *datastream.TransactionResponse, 1)
@@ -181,7 +181,7 @@ func TestGetTransactionStream(t *testing.T) {
 	logger := log.New()
 
 	// Create service with nil dependencies
-	srv := NewDataStreamServer(nil, nil, logger)
+	srv := NewDataStreamServer(logger)
 
 	// Create a context that we can cancel to end the stream
 	ctx, cancel := context.WithCancel(context.Background())
@@ -263,7 +263,7 @@ func TestGetTransactionStreamChannelClosed(t *testing.T) {
 	logger := log.New()
 
 	// Create service with nil dependencies
-	srv := NewDataStreamServer(nil, nil, logger)
+	srv := NewDataStreamServer(logger)
 
 	// Create a context that we can cancel to end the stream
 	ctx := context.Background()
@@ -321,7 +321,7 @@ func TestGetTransactionStreamSendError(t *testing.T) {
 	logger := log.New()
 
 	// Create service with nil dependencies
-	srv := NewDataStreamServer(nil, nil, logger)
+	srv := NewDataStreamServer(logger)
 
 	// Create a context that we can cancel to end the stream
 	ctx := context.Background()

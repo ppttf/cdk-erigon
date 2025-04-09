@@ -2,15 +2,17 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"net"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 	"time"
 
-	"github.com/erigontech/erigon/common/paths"
 	"github.com/gateway-fm/zkevm-data-streamer/datastreamer"
-	"github.com/gateway-fm/zkevm-data-streamer/log"
+	"github.com/erigontech/erigon-lib/log/v3"
+	"github.com/erigontech/erigon/zk/datastream/grpcdatastreamservice"
+	"google.golang.org/grpc"
 )
 
 const (
@@ -19,71 +21,133 @@ const (
 	streamTypeSequencer = 1
 )
 
-func main() {
-	// Define command-line flags
+// RelayConfig holds all configuration options
+type RelayConfig struct {
+	ServerAddr        string
+	RelayPort         uint
+	GRPCPort          uint
+	DataFile          string
+	LogLevel          string
+	WriteTimeoutMs    uint
+	InactivityTimeout uint
+}
+
+var config *RelayConfig
+var logger log.Logger
+
+func parseFlags() {
 	serverAddr := flag.String("server", "127.0.0.1:6900", "datastream server address to connect to")
-	port := flag.Uint("port", 7900, "port to expose for clients to connect")
-	dataFile := flag.String("datafile", filepath.Join(paths.DefaultDataDir(), "datarelay.bin"), "relay data file name")
+	relayPort := flag.Uint("relay-port", 7900, "port to expose for clients to connect")
+	grpcPort := flag.Uint("grpc-port", 7070, "port to expose for gRPC clients to connect")
+	dataFile := flag.String("datafile", "test.dat", "relay data file name")
 	logLevel := flag.String("log", "info", "log level (debug, info, warn, error)")
 	writeTimeoutMs := flag.Uint("writetimeout", 3000, "timeout for write operations on client connections in ms (0=no timeout)")
-	inactivityTimeoutSec := flag.Uint("inactivitytimeout", 120, "timeout to kill an inactive client connection in seconds (0=no timeout)")
-
+	inactivityTimeout := flag.Uint("inactivitytimeout", 120, "timeout to kill an inactive client connection in seconds (0=no timeout)")
 	flag.Parse()
 
-	// Setup logging
-	log.Init(log.Config{
-		Environment: "development",
-		Level:       *logLevel,
-		Outputs:     []string{"stdout"},
-	})
+	config = &RelayConfig{ServerAddr: *serverAddr, RelayPort: *relayPort, GRPCPort: *grpcPort, DataFile: *dataFile, LogLevel: *logLevel, WriteTimeoutMs: *writeTimeoutMs, InactivityTimeout: *inactivityTimeout}
 
-	writeTimeout := time.Duration(*writeTimeoutMs) * time.Millisecond
-	inactivityTimeout := time.Duration(*inactivityTimeoutSec) * time.Second
-	checkInterval := 5 * time.Second
+}
+func initLogger() {
+	logger = log.New()
+}
 
-	log.Infof(">> Relay server starting: port[%d] file[%s] server[%s] log[%s]",
-		*port, *dataFile, *serverAddr, *logLevel)
-
-	// Create relay server - directly use the implementation from gateway-fm/zkevm-data-streamer
-	relay, err := datastreamer.NewRelay(
-		*serverAddr,         // Server address
-		uint16(*port),       // Port
-		streamerVersion,     // Version
-		streamerSystemID,    // System ID
-		streamTypeSequencer, // Stream type
-		*dataFile,           // Data file
-		writeTimeout,        // Write timeout
-		inactivityTimeout,   // Inactivity timeout
-		checkInterval,       // Check interval
-		nil,                 // No custom logger
+func createRelayServer() (*datastreamer.StreamRelay, error) {
+	if config == nil {
+		config = &RelayConfig{} // Initialize with defaults if not set
+	}
+	return datastreamer.NewRelay(
+		config.ServerAddr,
+		uint16(config.RelayPort),
+		streamerVersion,
+		streamerSystemID,
+		streamTypeSequencer,
+		config.DataFile,
+		time.Duration(config.WriteTimeoutMs)*time.Millisecond,
+		time.Duration(config.InactivityTimeout)*time.Second,
+		5*time.Second,
+		nil,
 	)
+}
 
+func setupGRPCServer() (*grpc.Server, net.Listener, error) {
+	if config == nil {
+		config = &RelayConfig{} // Initialize with defaults if not set
+	}
+	server := grpc.NewServer()
+	datastreamService := grpcdatastreamservice.NewDataStreamServer(logger)
+	grpcdatastreamservice.RegisterWithGrpcServer(server, datastreamService)
+
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", config.GRPCPort))
 	if err != nil {
-		log.Errorf(">> Relay server: NewRelay error! (%v)", err)
+		return nil, nil, err
+	}
+
+	return server, listener, nil
+}
+
+func handleSignals(sigChan chan os.Signal) {
+	sig := <-sigChan
+	logger.Info("Received signal %v, shutting down...", sig)
+}
+
+func main() {
+
+	//create logger
+	initLogger()
+
+	// Parse command line flags
+	parseFlags()
+
+	logger.Info(">> Relay server starting: port[%d] grpc-port[%d] file[%s] server[%s] log[%s]",
+		config.RelayPort, config.GRPCPort, config.DataFile, config.ServerAddr, config.LogLevel)
+
+	// Create and start relay server
+	relay, err := createRelayServer()
+	if err != nil {
+		logger.Error(">> Relay server: NewRelay error! (%v)", err)
 		os.Exit(1)
 	}
 
-	// Start relay server
 	err = relay.Start()
 	if err != nil {
-		log.Errorf(">> Relay server: Start error! (%v)", err)
+		logger.Error(">> Relay server: Start error! (%v)", err)
 		os.Exit(1)
 	}
+	defer func() {
+		//relay.Stop() TODO: correct this one the upstream dependency has been upgraded.
+		logger.Info(">> Relay server stopped")
+	}()
 
-	log.Infof(">> Relay server started successfully")
+	logger.Info(">> Relay server started successfully")
 
-	// Set up signal handling
+	// Create and start gRPC server
+	grpcServer, listener, err := setupGRPCServer()
+	if err != nil {
+		logger.Error(">> Failed to setup gRPC server: %v", err)
+		os.Exit(1)
+	}
+	defer listener.Close()
+
+	go func() {
+		logger.Info(">> gRPC server starting on port %d", config.GRPCPort)
+		if err := grpcServer.Serve(listener); err != nil {
+			logger.Error(">> gRPC server failed to serve: %v", err)
+			os.Exit(1)
+		}
+	}()
+
+	defer func() {
+		grpcServer.GracefulStop()
+		logger.Info(">> gRPC server stopped")
+	}()
+
+	// Setup signal handling
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	go handleSignals(sigChan)
 
-	// Wait for signal
-	sig := <-sigChan
-	log.Infof("Received signal %v, shutting down...", sig)
+	// Wait for shutdown signal
+	<-sigChan
 
-	// Stop the relay server gracefully
-	if err := relay.Stop(); err != nil {
-		log.Errorf(">> Error stopping relay server: %v", err)
-		os.Exit(1)
-	}
-	log.Info(">> Relay server stopped")
 }
