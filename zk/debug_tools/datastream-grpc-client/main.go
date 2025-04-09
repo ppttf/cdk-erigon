@@ -31,7 +31,7 @@ func main() {
 	client := servicepb.NewDataStreamServiceClient(conn)
 
 	// Create a context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 
 	// Get stream info
@@ -49,24 +49,24 @@ func main() {
 	fmt.Printf("  Version: %s\n", info.DatastreamVersion)
 
 	// Get transaction stream
-	stream, err := client.GetTransactionStream(ctx, &servicepb.TransactionStreamRequest{})
-	if err != nil {
-		log.Fatalf("Failed to get transaction stream: %v", err)
-	}
-
-	// Receive transactions
-	for {
-		tx, err := stream.Recv()
-		if err != nil {
-			log.Printf("Error receiving transaction: %v", err)
-			break
-		}
-		fmt.Printf("Received transaction:\n")
-		fmt.Printf("  Hash: %x\n", tx.TxHash)
-		fmt.Printf("  Sender: %x\n", tx.Sender)
-		fmt.Printf("  Recipient: %x\n", tx.Recipient)
-		fmt.Printf("  Pending: %v\n", tx.IsPending)
-		fmt.Printf("  Gas Price: %d\n", tx.GasPrice)
-		fmt.Printf("  Timestamp: %d\n", tx.Timestamp)
-	}
+	//stream, err := client.GetTransactionStream(ctx, &servicepb.TransactionStreamRequest{})
+	//if err != nil {
+	//	log.Fatalf("Failed to get transaction stream: %v", err)
+	//}
+	//
+	//// Receive transactions
+	//for {
+	//	tx, err := stream.Recv()
+	//	if err != nil {
+	//		log.Printf("Error receiving transaction: %v", err)
+	//		break
+	//	}
+	//	fmt.Printf("Received transaction:\n")
+	//	fmt.Printf("  Hash: %x\n", tx.TxHash)
+	//	fmt.Printf("  Sender: %x\n", tx.Sender)
+	//	fmt.Printf("  Recipient: %x\n", tx.Recipient)
+	//	fmt.Printf("  Pending: %v\n", tx.IsPending)
+	//	fmt.Printf("  Gas Price: %d\n", tx.GasPrice)
+	//	fmt.Printf("  Timestamp: %d\n", tx.Timestamp)
+	//}
 }

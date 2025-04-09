@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net"
@@ -75,7 +76,15 @@ func setupGRPCServer() (*grpc.Server, net.Listener, error) {
 		config = &RelayConfig{} // Initialize with defaults if not set
 	}
 	server := grpc.NewServer()
-	datastreamService := grpcdatastreamservice.NewDataStreamServer(logger)
+	datastreamClient, err := grpcdatastreamservice.NewRelayDatastreamClient(context.Background(), config.RelayPort, logger)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create datastream client: %v", err)
+	}
+
+	datastreamService, err := grpcdatastreamservice.NewDataStreamServer(logger, datastreamClient)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create datastream service: %v", err)
+	}
 	grpcdatastreamservice.RegisterWithGrpcServer(server, datastreamService)
 
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", config.GRPCPort))

@@ -16,6 +16,7 @@ import (
 type DataStreamServer struct {
 	servicepb.UnimplementedDataStreamServiceServer
 	logger log.Logger
+	client DatastreamBridgeClient
 
 	// For managing active stream connections
 	streamsMu sync.RWMutex
@@ -23,11 +24,17 @@ type DataStreamServer struct {
 }
 
 // NewDataStreamServer creates a new DataStreamServer instance
-func NewDataStreamServer(logger log.Logger) *DataStreamServer {
+func NewDataStreamServer(logger log.Logger, client DatastreamBridgeClient) (*DataStreamServer, error) {
+	// Start the client
+	if err := client.Start(); err != nil {
+		return nil, err
+	}
+
 	return &DataStreamServer{
 		txStreams: make(map[string]chan *servicepb.TransactionResponse),
 		logger:    logger,
-	}
+		client:    client,
+	}, nil
 }
 
 // GetTransactionStream implements the DataStreamService.GetTransactionStream method
@@ -72,10 +79,7 @@ func (s *DataStreamServer) GetTransactionStream(req *servicepb.TransactionStream
 
 // GetStreamInfo implements the DataStreamService.GetStreamInfo method
 func (s *DataStreamServer) GetStreamInfo(ctx context.Context, req *servicepb.StreamInfoRequest) (*servicepb.StreamInfoResponse, error) {
-	// Implementation will go here
-	return &servicepb.StreamInfoResponse{
-		DatastreamVersion: "1.0", // Initial version
-	}, nil
+	return s.client.GetStreamInfo(ctx)
 }
 
 // BroadcastTransaction broadcasts a transaction to all active streams

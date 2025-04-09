@@ -3,83 +3,25 @@ package grpcdatastreamservice
 import (
 	"context"
 	"errors"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon/zk/datastream/proto/datastream"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/metadata"
 )
-
-// MockTransactionStream implements the servicepb.DataStreamService_GetTransactionStreamServer interface
-type MockTransactionStream struct {
-	ctx           context.Context
-	receivedTxs   []*datastream.TransactionResponse
-	mockSendError error
-	mu            sync.Mutex
-}
-
-func NewMockTransactionStream(ctx context.Context) *MockTransactionStream {
-	return &MockTransactionStream{
-		ctx:         ctx,
-		receivedTxs: make([]*datastream.TransactionResponse, 0),
-	}
-}
-
-func (m *MockTransactionStream) Send(tx *datastream.TransactionResponse) error {
-	if m.mockSendError != nil {
-		return m.mockSendError
-	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.receivedTxs = append(m.receivedTxs, tx)
-	return nil
-}
-
-func (m *MockTransactionStream) SetSendError(err error) {
-	m.mockSendError = err
-}
-
-func (m *MockTransactionStream) GetReceivedTransactions() []*datastream.TransactionResponse {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return m.receivedTxs
-}
-
-func (m *MockTransactionStream) Context() context.Context {
-	return m.ctx
-}
-
-func (m *MockTransactionStream) SendHeader(metadata.MD) error {
-	return nil
-}
-
-func (m *MockTransactionStream) SetHeader(metadata.MD) error {
-	return nil
-}
-
-func (m *MockTransactionStream) SetTrailer(metadata.MD) {
-}
-
-// RecvMsg implements grpc.ServerStream interface
-func (m *MockTransactionStream) RecvMsg(msg interface{}) error {
-	return nil
-}
-
-// SendMsg implements grpc.ServerStream interface
-func (m *MockTransactionStream) SendMsg(msg interface{}) error {
-	return nil
-}
 
 // TestGetStreamInfo verifies the service returns correct stream info
 func TestGetStreamInfo(t *testing.T) {
 	// Create a no-op logger
 	logger := log.New()
 
-	// Create service with nil dependencies (they're not used in GetStreamInfo)
-	srv := NewDataStreamServer(logger)
+	// Create mock client
+	mockClient := NewMockDatastreamBridgeClient()
+
+	// Create service with mock client
+	srv, err := NewDataStreamServer(logger, mockClient)
+	require.NoError(t, err, "Failed to create service")
 	require.NotNil(t, srv, "Service should be created")
 
 	// Call the method
@@ -98,9 +40,12 @@ func TestGetStreamInfo(t *testing.T) {
 func TestBroadcastTransaction(t *testing.T) {
 	// Create a no-op logger
 	logger := log.New()
+	// Create mock client
+	mockClient := NewMockDatastreamBridgeClient()
 
 	// Create service with nil dependencies (they're not directly used in broadcast)
-	srv := NewDataStreamServer(logger)
+	srv, err := NewDataStreamServer(logger, mockClient)
+	require.NoError(t, err, "Failed to create service")
 
 	// Manually add a stream channel
 	testStream := make(chan *datastream.TransactionResponse, 10)
@@ -140,8 +85,12 @@ func TestBroadcastToFullChannelDoesntBlock(t *testing.T) {
 	// Create a no-op logger
 	logger := log.New()
 
-	// Create service
-	srv := NewDataStreamServer(logger)
+	// Create mock client
+	mockClient := NewMockDatastreamBridgeClient()
+
+	// Create service with mock client
+	srv, err := NewDataStreamServer(logger, mockClient)
+	require.NoError(t, err, "Failed to create service")
 
 	// Create a channel with capacity 1
 	testStream := make(chan *datastream.TransactionResponse, 1)
@@ -180,8 +129,12 @@ func TestGetTransactionStream(t *testing.T) {
 	// Create a no-op logger
 	logger := log.New()
 
-	// Create service with nil dependencies
-	srv := NewDataStreamServer(logger)
+	// Create mock client
+	mockClient := NewMockDatastreamBridgeClient()
+
+	// Create service with mock client
+	srv, err := NewDataStreamServer(logger, mockClient)
+	require.NoError(t, err, "Failed to create service")
 
 	// Create a context that we can cancel to end the stream
 	ctx, cancel := context.WithCancel(context.Background())
@@ -262,8 +215,12 @@ func TestGetTransactionStreamChannelClosed(t *testing.T) {
 	// Create a no-op logger
 	logger := log.New()
 
-	// Create service with nil dependencies
-	srv := NewDataStreamServer(logger)
+	// Create mock client
+	mockClient := NewMockDatastreamBridgeClient()
+
+	// Create service with mock client
+	srv, err := NewDataStreamServer(logger, mockClient)
+	require.NoError(t, err, "Failed to create service")
 
 	// Create a context that we can cancel to end the stream
 	ctx := context.Background()
@@ -320,8 +277,12 @@ func TestGetTransactionStreamSendError(t *testing.T) {
 	// Create a no-op logger
 	logger := log.New()
 
-	// Create service with nil dependencies
-	srv := NewDataStreamServer(logger)
+	// Create mock client
+	mockClient := NewMockDatastreamBridgeClient()
+
+	// Create service with mock client
+	srv, err := NewDataStreamServer(logger, mockClient)
+	require.NoError(t, err, "Failed to create service")
 
 	// Create a context that we can cancel to end the stream
 	ctx := context.Background()
