@@ -20,7 +20,7 @@ func TestGetStreamInfo(t *testing.T) {
 	mockClient := NewMockDatastreamBridgeClient()
 
 	// Create service with mock client
-	srv, err := NewDataStreamServer(logger, mockClient)
+	srv, err := NewGRPCDataStreamServer(logger, mockClient)
 	require.NoError(t, err, "Failed to create service")
 	require.NotNil(t, srv, "Service should be created")
 
@@ -44,7 +44,7 @@ func TestBroadcastTransaction(t *testing.T) {
 	mockClient := NewMockDatastreamBridgeClient()
 
 	// Create service with nil dependencies (they're not directly used in broadcast)
-	srv, err := NewDataStreamServer(logger, mockClient)
+	srv, err := NewGRPCDataStreamServer(logger, mockClient)
 	require.NoError(t, err, "Failed to create service")
 
 	// Manually add a stream channel
@@ -89,7 +89,7 @@ func TestBroadcastToFullChannelDoesntBlock(t *testing.T) {
 	mockClient := NewMockDatastreamBridgeClient()
 
 	// Create service with mock client
-	srv, err := NewDataStreamServer(logger, mockClient)
+	srv, err := NewGRPCDataStreamServer(logger, mockClient)
 	require.NoError(t, err, "Failed to create service")
 
 	// Create a channel with capacity 1
@@ -133,7 +133,7 @@ func TestGetTransactionStream(t *testing.T) {
 	mockClient := NewMockDatastreamBridgeClient()
 
 	// Create service with mock client
-	srv, err := NewDataStreamServer(logger, mockClient)
+	srv, err := NewGRPCDataStreamServer(logger, mockClient)
 	require.NoError(t, err, "Failed to create service")
 
 	// Create a context that we can cancel to end the stream
@@ -219,7 +219,7 @@ func TestGetTransactionStreamChannelClosed(t *testing.T) {
 	mockClient := NewMockDatastreamBridgeClient()
 
 	// Create service with mock client
-	srv, err := NewDataStreamServer(logger, mockClient)
+	srv, err := NewGRPCDataStreamServer(logger, mockClient)
 	require.NoError(t, err, "Failed to create service")
 
 	// Create a context that we can cancel to end the stream
@@ -281,7 +281,7 @@ func TestGetTransactionStreamSendError(t *testing.T) {
 	mockClient := NewMockDatastreamBridgeClient()
 
 	// Create service with mock client
-	srv, err := NewDataStreamServer(logger, mockClient)
+	srv, err := NewGRPCDataStreamServer(logger, mockClient)
 	require.NoError(t, err, "Failed to create service")
 
 	// Create a context that we can cancel to end the stream

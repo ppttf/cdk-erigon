@@ -11,33 +11,6 @@ import (
 	"github.com/erigontech/erigon/zk/datastream/types"
 )
 
-// DatastreamClient defines the interface for a datastream client
-type DatastreamBridgeClient interface {
-	// Start starts the client connection
-	Start() error
-
-	// Stop stops the client connection
-	Stop() error
-
-	// GetEntryChan returns the channel for receiving entries
-	GetEntryChan() *chan interface{}
-
-	// ReadAllEntriesToChannel reads all entries into the channel
-	ReadAllEntriesToChannel() error
-
-	// GetL2BlockByNumber retrieves an L2 block by its number
-	GetL2BlockByNumber(blockNum uint64) (*types.FullL2Block, error)
-
-	// GetLatestL2Block retrieves the latest L2 block
-	GetLatestL2Block() (*types.FullL2Block, error)
-
-	// GetHeader retrieves the stream header
-	GetHeader() (*types.HeaderEntry, error)
-
-	// GetStreamInfo retrieves information about the stream
-	GetStreamInfo(ctx context.Context) (*servicepb.StreamInfoResponse, error)
-}
-
 // RelayDatastreamClient represents a client for the relay's datastream service
 type RelayDatastreamClient struct {
 	client *client.StreamClient

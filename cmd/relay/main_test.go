@@ -7,7 +7,7 @@ import (
 	"syscall"
 	"testing"
 
-	zkevmLog "github.com/0xPolygonHermez/zkevm-data-streamer/log"
+	zkevmLog "github.com/gateway-fm/zkevm-data-streamer/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -71,7 +71,7 @@ func TestGRPCServerSetup(t *testing.T) {
 	}
 	config = testConfig
 
-	server, listener, err := setupGRPCServer()
+	server, listener, err := setupGRPCServer(NewMockDatastreamFactory())
 	require.NoError(t, err)
 	require.NotNil(t, server)
 	require.NotNil(t, listener)

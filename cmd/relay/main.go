@@ -10,9 +10,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gateway-fm/zkevm-data-streamer/datastreamer"
 	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon/zk/datastream/grpcdatastreamservice"
+	"github.com/gateway-fm/zkevm-data-streamer/datastreamer"
 	"google.golang.org/grpc"
 )
 
@@ -71,17 +71,17 @@ func createRelayServer() (*datastreamer.StreamRelay, error) {
 	)
 }
 
-func setupGRPCServer() (*grpc.Server, net.Listener, error) {
+func setupGRPCServer(factory grpcdatastreamservice.DatastreamFactory) (*grpc.Server, net.Listener, error) {
 	if config == nil {
 		config = &RelayConfig{} // Initialize with defaults if not set
 	}
 	server := grpc.NewServer()
-	datastreamClient, err := grpcdatastreamservice.NewRelayDatastreamClient(context.Background(), config.RelayPort, logger)
+	datastreamClient, err := factory.NewRelayDatastreamClient(context.Background(), config.RelayPort, logger)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create datastream client: %v", err)
 	}
 
-	datastreamService, err := grpcdatastreamservice.NewDataStreamServer(logger, datastreamClient)
+	datastreamService, err := factory.NewGRPCDataStreamServer(logger, datastreamClient)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create datastream service: %v", err)
 	}
@@ -118,20 +118,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = relay.Start()
-	if err != nil {
+	if err := relay.Start(); err != nil {
 		logger.Error(">> Relay server: Start error! (%v)", err)
 		os.Exit(1)
 	}
+
 	defer func() {
-		//relay.Stop() TODO: correct this one the upstream dependency has been upgraded.
+		if err := relay.Stop(); err != nil {
+			logger.Error("Error stopping relay: %v", err)
+		}
 		logger.Info(">> Relay server stopped")
 	}()
 
 	logger.Info(">> Relay server started successfully")
 
 	// Create and start gRPC server
-	grpcServer, listener, err := setupGRPCServer()
+	grpcServer, listener, err := setupGRPCServer(grpcdatastreamservice.NewDefaultDatastreamFactory())
 	if err != nil {
 		logger.Error(">> Failed to setup gRPC server: %v", err)
 		os.Exit(1)

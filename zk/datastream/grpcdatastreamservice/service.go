@@ -12,8 +12,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-// DataStreamServer implements the DataStreamService gRPC interface
-type DataStreamServer struct {
+// GRPCDataStreamServer implements the DataStreamService gRPC interface
+type GRPCDataStreamServer struct {
 	servicepb.UnimplementedDataStreamServiceServer
 	logger log.Logger
 	client DatastreamBridgeClient
@@ -23,22 +23,8 @@ type DataStreamServer struct {
 	txStreams map[string]chan *servicepb.TransactionResponse
 }
 
-// NewDataStreamServer creates a new DataStreamServer instance
-func NewDataStreamServer(logger log.Logger, client DatastreamBridgeClient) (*DataStreamServer, error) {
-	// Start the client
-	if err := client.Start(); err != nil {
-		return nil, err
-	}
-
-	return &DataStreamServer{
-		txStreams: make(map[string]chan *servicepb.TransactionResponse),
-		logger:    logger,
-		client:    client,
-	}, nil
-}
-
 // GetTransactionStream implements the DataStreamService.GetTransactionStream method
-func (s *DataStreamServer) GetTransactionStream(req *servicepb.TransactionStreamRequest, stream servicepb.DataStreamService_GetTransactionStreamServer) error {
+func (s *GRPCDataStreamServer) GetTransactionStream(req *servicepb.TransactionStreamRequest, stream servicepb.DataStreamService_GetTransactionStreamServer) error {
 	// Create a unique channel for this stream
 	streamID := generateStreamID()
 
@@ -78,12 +64,12 @@ func (s *DataStreamServer) GetTransactionStream(req *servicepb.TransactionStream
 }
 
 // GetStreamInfo implements the DataStreamService.GetStreamInfo method
-func (s *DataStreamServer) GetStreamInfo(ctx context.Context, req *servicepb.StreamInfoRequest) (*servicepb.StreamInfoResponse, error) {
+func (s *GRPCDataStreamServer) GetStreamInfo(ctx context.Context, req *servicepb.StreamInfoRequest) (*servicepb.StreamInfoResponse, error) {
 	return s.client.GetStreamInfo(ctx)
 }
 
 // BroadcastTransaction broadcasts a transaction to all active streams
-func (s *DataStreamServer) BroadcastTransaction(txResp *servicepb.TransactionResponse) {
+func (s *GRPCDataStreamServer) BroadcastTransaction(txResp *servicepb.TransactionResponse) {
 	s.streamsMu.RLock()
 	defer s.streamsMu.RUnlock()
 
@@ -99,8 +85,8 @@ func (s *DataStreamServer) BroadcastTransaction(txResp *servicepb.TransactionRes
 	}
 }
 
-// RegisterWithGrpcServer registers the DataStreamServer with a gRPC server
-func RegisterWithGrpcServer(grpcServer *grpc.Server, dataStreamServer *DataStreamServer) {
+// RegisterWithGrpcServer registers the GRPCDataStreamServer with a gRPC server
+func RegisterWithGrpcServer(grpcServer *grpc.Server, dataStreamServer servicepb.DataStreamServiceServer) {
 	servicepb.RegisterDataStreamServiceServer(grpcServer, dataStreamServer)
 }
 
@@ -108,4 +94,18 @@ func RegisterWithGrpcServer(grpcServer *grpc.Server, dataStreamServer *DataStrea
 // In a real implementation, you would use something more robust
 func generateStreamID() string {
 	return "stream-" + libcommon.Hash{}.String()
+}
+
+// NewGRPCDataStreamServer creates a new GRPCDataStreamServer instance
+func NewGRPCDataStreamServer(logger log.Logger, client DatastreamBridgeClient) (*GRPCDataStreamServer, error) {
+	// Start the client
+	if err := client.Start(); err != nil {
+		return nil, err
+	}
+
+	return &GRPCDataStreamServer{
+		txStreams: make(map[string]chan *servicepb.TransactionResponse),
+		logger:    logger,
+		client:    client,
+	}, nil
 }
