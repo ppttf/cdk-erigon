@@ -985,3 +985,36 @@ func (c *StreamClient) setReadTimeout(timeout time.Duration) error {
 func (c *StreamClient) setWriteTimeout(timeout time.Duration) error {
 	return c.conn.SetWriteDeadline(time.Now().Add(timeout))
 }
+
+// SendNoop sends a keep-alive (noop) command to the server to prevent connection timeout.
+// This is useful for maintaining long-lived connections where there may be extended periods
+// of inactivity between actual data operations.
+func (c *StreamClient) SendNoop() error {
+	select {
+	case <-c.ctx.Done():
+		return errors.New("context done - stopping")
+	default:
+	}
+
+	if !c.started {
+		return errors.New("client not started")
+	}
+
+	if err := c.sendNoopCmd(); err != nil {
+		c.lastError = err
+		return fmt.Errorf("sendNoopCmd: %w", err)
+	}
+
+	// Read and process the result
+	resultEntry, err := c.readPacketAndDecodeResultEntry()
+	if err != nil {
+		c.lastError = err
+		return fmt.Errorf("readPacketAndDecodeResultEntry: %w", err)
+	}
+
+	if resultEntry.ErrorNum != 0 {
+		return fmt.Errorf("noop command failed with error code: %d", resultEntry.ErrorNum)
+	}
+
+	return nil
+}

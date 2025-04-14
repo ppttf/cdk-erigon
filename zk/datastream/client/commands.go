@@ -9,6 +9,7 @@ const (
 	CmdStartBookmark // CmdStartBookmark for the start from bookmark TCP client command
 	CmdEntry         // CmdEntry for the get entry TCP client command
 	CmdBookmark      // CmdBookmark for the get bookmark TCP client command
+	CmdNoop          // CmdNoop for the keep-alive TCP client command
 )
 
 // sendHeaderCmd sends the header command to the server.
@@ -64,6 +65,11 @@ func (c *StreamClient) sendEntryCmd(entryNum uint64) error {
 // sendHeaderCmd sends the header command to the server.
 func (c *StreamClient) sendStopCmd() error {
 	return c.sendCommand(CmdStop)
+}
+
+// sendNoopCmd sends a noop (keepalive) command to the server.
+func (c *StreamClient) sendNoopCmd() error {
+	return c.sendCommand(CmdNoop)
 }
 
 func (c *StreamClient) sendCommand(cmd Command) error {
