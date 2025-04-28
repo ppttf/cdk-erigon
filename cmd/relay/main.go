@@ -12,6 +12,7 @@ import (
 
 	"github.com/erigontech/erigon-lib/log/v3"
 	"github.com/erigontech/erigon/zk/datastream/grpcdatastreamservice"
+	"github.com/erigontech/erigon/zk/datastream/server"
 	"github.com/gateway-fm/zkevm-data-streamer/datastreamer"
 	"google.golang.org/grpc"
 )
@@ -28,6 +29,7 @@ type RelayConfig struct {
 	RelayPort         uint
 	GRPCPort          uint
 	DataFile          string
+	StorageType       string
 	LogLevel          string
 	WriteTimeoutMs    uint
 	InactivityTimeout uint
@@ -41,12 +43,13 @@ func parseFlags() {
 	relayPort := flag.Uint("relay-port", 7900, "port to expose for clients to connect")
 	grpcPort := flag.Uint("grpc-port", 7070, "port to expose for gRPC clients to connect")
 	dataFile := flag.String("datafile", "test.dat", "relay data file name")
+	storageType := flag.String("storage-type", "mdbx", "type of storage to use (file, mdbx)")
 	logLevel := flag.String("log", "info", "log level (debug, info, warn, error)")
 	writeTimeoutMs := flag.Uint("writetimeout", 3000, "timeout for write operations on client connections in ms (0=no timeout)")
 	inactivityTimeout := flag.Uint("inactivitytimeout", 120, "timeout to kill an inactive client connection in seconds (0=no timeout)")
 	flag.Parse()
 
-	config = &RelayConfig{ServerAddr: *serverAddr, RelayPort: *relayPort, GRPCPort: *grpcPort, DataFile: *dataFile, LogLevel: *logLevel, WriteTimeoutMs: *writeTimeoutMs, InactivityTimeout: *inactivityTimeout}
+	config = &RelayConfig{ServerAddr: *serverAddr, RelayPort: *relayPort, GRPCPort: *grpcPort, DataFile: *dataFile, LogLevel: *logLevel, WriteTimeoutMs: *writeTimeoutMs, InactivityTimeout: *inactivityTimeout, StorageType: *storageType}
 
 }
 func initLogger() {
@@ -57,6 +60,27 @@ func createRelayServer() (*datastreamer.StreamRelay, error) {
 	if config == nil {
 		config = &RelayConfig{} // Initialize with defaults if not set
 	}
+
+	var storageFactory func() (datastreamer.StreamStore, error)
+
+	if config.StorageType == "mdbx" {
+		// Create MDBX-based storage
+		storeconfig := server.StreamStoreConfig{
+			SystemID:   streamerSystemID,
+			FilePath:   config.DataFile,
+			MDBXMaxDBS: 3,
+		}
+
+		mdbxStore, err := server.NewMDBXRwDBStreamStore(&storeconfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create MDBX store: %w", err)
+		}
+
+		storageFactory = func() (datastreamer.StreamStore, error) {
+			return mdbxStore, nil
+		}
+	}
+
 	return datastreamer.NewRelay(
 		config.ServerAddr,
 		uint16(config.RelayPort),
@@ -68,6 +92,7 @@ func createRelayServer() (*datastreamer.StreamRelay, error) {
 		time.Duration(config.InactivityTimeout)*time.Second,
 		5*time.Second,
 		nil,
+		storageFactory,
 	)
 }
 
@@ -133,25 +158,25 @@ func main() {
 	logger.Info(">> Relay server started successfully")
 
 	// Create and start gRPC server
-	grpcServer, listener, err := setupGRPCServer(grpcdatastreamservice.NewDefaultDatastreamFactory())
-	if err != nil {
-		logger.Error(">> Failed to setup gRPC server: %v", err)
-		os.Exit(1)
-	}
-	defer listener.Close()
-
-	go func() {
-		logger.Info(">> gRPC server starting on port %d", config.GRPCPort)
-		if err := grpcServer.Serve(listener); err != nil {
-			logger.Error(">> gRPC server failed to serve: %v", err)
-			os.Exit(1)
-		}
-	}()
-
-	defer func() {
-		grpcServer.GracefulStop()
-		logger.Info(">> gRPC server stopped")
-	}()
+	//grpcServer, listener, err := setupGRPCServer(grpcdatastreamservice.NewDefaultDatastreamFactory())
+	//if err != nil {
+	//	logger.Error(">> Failed to setup gRPC server: %v", err)
+	//	os.Exit(1)
+	//}
+	//defer listener.Close()
+	//
+	//go func() {
+	//	logger.Info(">> gRPC server starting on port %d", config.GRPCPort)
+	//	if err := grpcServer.Serve(listener); err != nil {
+	//		logger.Error(">> gRPC server failed to serve: %v", err)
+	//		os.Exit(1)
+	//	}
+	//}()
+	//
+	//defer func() {
+	//	grpcServer.GracefulStop()
+	//	logger.Info(">> gRPC server stopped")
+	//}()
 
 	// Setup signal handling
 	sigChan := make(chan os.Signal, 1)

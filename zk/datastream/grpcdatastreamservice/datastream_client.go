@@ -48,9 +48,9 @@ func (c *RelayDatastreamClient) Start() error {
 	}
 
 	// Start the keepalive mechanism with a 30-second interval
-	c.keepaliveMu.Lock()
-	c.keepaliveStop = c.StartKeepAlive(30 * time.Second)
-	c.keepaliveMu.Unlock()
+	//c.keepaliveMu.Lock()
+	//c.keepaliveStop = c.StartKeepAlive(30 * time.Second)
+	//c.keepaliveMu.Unlock()
 
 	return nil
 }
