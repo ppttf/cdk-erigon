@@ -244,6 +244,7 @@ var DefaultFlags = []cli.Flag{
 	&utils.GasPriceFactor,
 	&utils.DataStreamHost,
 	&utils.DataStreamPort,
+	&utils.DataStreamStorageType,
 	&utils.DataStreamWriteTimeout,
 	&utils.DataStreamInactivityTimeout,
 	&utils.DataStreamInactivityCheckInterval,

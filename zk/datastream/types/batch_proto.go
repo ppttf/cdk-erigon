@@ -2,7 +2,7 @@ package types
 
 import (
 	libcommon "github.com/erigontech/erigon-lib/common"
-	"github.com/erigontech/erigon/zk/datastream/proto/github.com/0xPolygonHermez/zkevm-node/state/datastream"
+	"github.com/erigontech/erigon/zk/datastream/proto/datastream"
 	"google.golang.org/protobuf/proto"
 )
 

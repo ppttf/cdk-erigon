@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package datastream.service.v1;
+
+import "datastream.proto";
+
+option go_package = "./datastream";
+
+// DataStreamService provides gRPC streaming capabilities for Erigon data
+service DataStreamService {
+  // GetTransactionStream returns a continuous stream of transactions as they're processed
+  rpc GetTransactionStream(TransactionStreamRequest) returns (stream TransactionResponse);
+  
+  // GetStreamInfo returns information about the current datastream
+  rpc GetStreamInfo(StreamInfoRequest) returns (StreamInfoResponse);
+}
+
+// TransactionStreamRequest for requesting a stream of transactions
+message TransactionStreamRequest {
+  // Empty for now - for future extension
+}
+
+// TransactionResponse contains transaction data and metadata
+message TransactionResponse {
+  datastream.v1.Transaction transaction = 1;  // Underlying transaction data
+  bytes tx_hash = 2;                          // Transaction hash
+  bytes sender = 3;                           // Sender address
+  bytes recipient = 4;                        // Recipient address (may be empty for contract creation)
+  bool is_pending = 5;                        // Whether transaction is still pending
+  uint64 gas_price = 6;                       // Gas price (derived from transaction)
+  uint64 timestamp = 7;                       // When the transaction was first seen
+}
+
+// StreamInfoRequest for requesting information about the datastream
+message StreamInfoRequest {}
+
+// StreamInfoResponse contains datastream status information
+message StreamInfoResponse {
+  uint64 highest_block_number = 1;    // Highest block in the datastream
+  uint64 highest_batch_number = 2;    // Highest batch in the datastream
+  uint64 total_entries = 3;           // Total number of entries in the datastream
+  uint64 pending_tx_count = 4;        // Number of pending transactions 
+  uint64 queued_tx_count = 5;         // Number of queued transactions
+  string datastream_version = 6;      // Version of the datastream protocol
+} 

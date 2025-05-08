@@ -7,9 +7,8 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/0xPolygonHermez/zkevm-data-streamer/datastreamer"
-	log2 "github.com/0xPolygonHermez/zkevm-data-streamer/log"
 	"github.com/erigontech/erigon/zk/datastream/server"
+	log2 "github.com/gateway-fm/zkevm-data-streamer/log"
 )
 
 var (
@@ -27,7 +26,7 @@ func main() {
 		Outputs:     []string{"stdout"},
 	}
 
-	stream, err := dataStreamServerFactory.CreateStreamServer(uint16(6900), 1, datastreamer.StreamType(1), file, 5*time.Second, 10*time.Second, 60*time.Second, logConfig)
+	stream, err := dataStreamServerFactory.CreateStreamServer(uint16(6900), 1, file, 5*time.Second, 10*time.Second, 60*time.Second, logConfig, server.StreamStoreTypeFile)
 	if err != nil {
 		fmt.Println("Error creating datastream server:", err)
 		return

@@ -12,7 +12,9 @@ ARG RELEASE_DOCKER_BASE_IMAGE="alpine:3.20.1" \
        42069/udp \
        8080 \
        9090 \
-       6060"
+       6060 \
+       7070 \
+       7900"
 
 ## Note TARGETARCH is a crucial variable:
 ##   see https://docs.docker.com/reference/dockerfile/#automatic-platform-args-in-the-global-scope
