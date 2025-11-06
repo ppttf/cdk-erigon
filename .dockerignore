@@ -10,3 +10,33 @@ cmd/prometheus
 vendor
 
 cache.db
+
+# Version control
+.git
+.gitignore
+
+# Local blockchain data (68GB!)
+datadir
+
+# IDE and editor files
+.idea
+.vscode
+.DS_Store
+
+# Claude and documentation
+.claude
+CLAUDE.md
+
+# Test and coverage outputs
+coverage.out
+*.test
+*.prof
+
+# Kurtosis
+.kurtosis
+
+# Other development artifacts
+*.log
+*.dat
+tmp
+temp
