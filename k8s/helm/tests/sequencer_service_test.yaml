@@ -1,0 +1,63 @@
+suite: test sequencer service
+templates:
+  - sequencer/service.yaml
+tests:
+  - it: should render a Service when sequencer is enabled
+    set:
+      sequencer.enabled: true
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-cdk-erigon-sequencer
+
+  - it: should not render when sequencer is disabled
+    set:
+      sequencer.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should use correct selector labels
+    set:
+      sequencer.enabled: true
+    asserts:
+      - equal:
+          path: spec.selector["app.kubernetes.io/name"]
+          value: cdk-erigon
+      - equal:
+          path: spec.selector["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+      - equal:
+          path: spec.selector.component
+          value: sequencer
+
+  - it: should expose NATS port when embedded NATS is enabled
+    set:
+      sequencer.enabled: true
+      sequencer.nats.embedded: true
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            name: nats
+            port: 4222
+            targetPort: nats
+            protocol: TCP
+
+  - it: should be a ClusterIP service by default
+    set:
+      sequencer.enabled: true
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+
+  - it: should be a headless service for StatefulSet
+    set:
+      sequencer.enabled: true
+    asserts:
+      - equal:
+          path: spec.clusterIP
+          value: None

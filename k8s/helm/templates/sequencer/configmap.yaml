@@ -1,0 +1,24 @@
+{{- if .Values.sequencer.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cdk-erigon.fullname" . }}-sequencer
+  labels:
+    {{- include "cdk-erigon.labels" . | nindent 4 }}
+    component: sequencer
+data:
+  {{- if .Values.sequencer.nats.embedded }}
+  nats.conf: |
+    port: 4222
+    server_name: {{ include "cdk-erigon.fullname" . }}-sequencer
+
+    jetstream {
+      store_dir: "/data/nats"
+      max_memory_store: 1073741824
+      max_file_store: 10737418240
+    }
+
+    max_payload: 8388608
+    max_pending: 67108864
+  {{- end }}
+{{- end }}

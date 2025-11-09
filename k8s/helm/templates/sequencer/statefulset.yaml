@@ -23,6 +23,12 @@ spec:
         runAsNonRoot: {{ .Values.sequencer.securityContext.runAsNonRoot }}
         runAsUser: {{ .Values.sequencer.securityContext.runAsUser }}
         fsGroup: {{ .Values.sequencer.securityContext.fsGroup }}
+      {{- if .Values.sequencer.nats.embedded }}
+      volumes:
+      - name: nats-config
+        configMap:
+          name: {{ include "cdk-erigon.fullname" . }}-sequencer
+      {{- end }}
       containers:
       - name: erigon
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -33,6 +39,49 @@ spec:
           containerPort: 4222
           protocol: TCP
         {{- end }}
+        volumeMounts:
+        {{- if .Values.sequencer.persistence.enabled }}
+        - name: data
+          mountPath: /data
+        {{- end }}
+        {{- if and .Values.sequencer.nats.embedded .Values.sequencer.nats.persistence.enabled }}
+        - name: nats-storage
+          mountPath: /data/nats
+        {{- end }}
+        {{- if .Values.sequencer.nats.embedded }}
+        - name: nats-config
+          mountPath: /etc/nats
+          readOnly: true
+        {{- end }}
         resources:
           {{- toYaml .Values.sequencer.resources | nindent 10 }}
+  {{- if or .Values.sequencer.persistence.enabled (and .Values.sequencer.nats.embedded .Values.sequencer.nats.persistence.enabled) }}
+  volumeClaimTemplates:
+  {{- if .Values.sequencer.persistence.enabled }}
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      {{- if .Values.sequencer.persistence.storageClass }}
+      storageClassName: {{ .Values.sequencer.persistence.storageClass }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ .Values.sequencer.persistence.size }}
+  {{- end }}
+  {{- if and .Values.sequencer.nats.embedded .Values.sequencer.nats.persistence.enabled }}
+  - metadata:
+      name: nats-storage
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      {{- if .Values.sequencer.nats.persistence.storageClass }}
+      storageClassName: {{ .Values.sequencer.nats.persistence.storageClass }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ .Values.sequencer.nats.persistence.size }}
+  {{- end }}
+  {{- end }}
 {{- end }}
