@@ -1,4 +1,4 @@
-{{- if .Values.sequencer.enabled }}
+{{- if and .Values.sequencer.enabled .Values.sequencer.nats.embedded }}
 apiVersion: v1
 kind: ConfigMap
 metadata:

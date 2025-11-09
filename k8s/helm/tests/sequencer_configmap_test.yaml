@@ -19,6 +19,14 @@ tests:
       - hasDocuments:
           count: 0
 
+  - it: should not render when embedded NATS is disabled
+    set:
+      sequencer.enabled: true
+      sequencer.nats.embedded: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
   - it: should include standard labels
     set:
       sequencer.enabled: true
