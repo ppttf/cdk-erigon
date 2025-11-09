@@ -1,0 +1,46 @@
+# Local development overrides for cdk-erigon
+# Usage: helm install cdk-erigon k8s/helm -f k8s/helm/values-local.yaml
+
+# -- Use local image (no registry pull)
+image:
+  repository: cdk-erigon
+  tag: local
+  pullPolicy: Never
+
+# -- Sequencer configuration for local development
+sequencer:
+  enabled: true
+  replicas: 1
+
+  # -- Lower resources for local development
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 2Gi
+      cpu: 1000m
+
+  # -- Reduced storage for local
+  persistence:
+    enabled: true
+    size: 10Gi
+
+  nats:
+    embedded: true
+    persistence:
+      enabled: true
+      size: 1Gi
+
+# -- RPC configuration for local development
+rpc:
+  enabled: false
+  replicas: 1
+
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 2Gi
+      cpu: 1000m

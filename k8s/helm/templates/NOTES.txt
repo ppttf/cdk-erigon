@@ -1,0 +1,33 @@
+Thank you for installing {{ .Chart.Name }}.
+
+Your release is named {{ .Release.Name }}.
+
+Components deployed:
+{{- if .Values.sequencer.enabled }}
+  ✓ Sequencer (with {{ if .Values.sequencer.nats.embedded }}embedded NATS{{ else }}external NATS{{ end }})
+{{- end }}
+{{- if .Values.rpc.enabled }}
+  ✓ RPC Node ({{ .Values.rpc.replicas }} replica{{ if gt (int .Values.rpc.replicas) 1 }}s{{ end }})
+{{- end }}
+
+To check the status of your deployment:
+
+  kubectl get pods -l app.kubernetes.io/instance={{ .Release.Name }}
+
+{{- if .Values.sequencer.enabled }}
+
+To view sequencer logs:
+
+  kubectl logs -f -l app.kubernetes.io/instance={{ .Release.Name }},component=sequencer
+
+{{- end }}
+{{- if .Values.rpc.enabled }}
+
+To view RPC logs:
+
+  kubectl logs -f -l app.kubernetes.io/instance={{ .Release.Name }},component=rpc
+
+{{- end }}
+
+For more information about this chart, visit:
+  https://github.com/0xPolygon/cdk-erigon/tree/main/k8s
