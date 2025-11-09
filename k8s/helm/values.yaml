@@ -32,6 +32,16 @@ sequencer:
     # -- Enable embedded NATS server
     embedded: true
 
+    # -- NATS JetStream configuration
+    # -- Maximum memory for JetStream (bytes, default 1GB)
+    maxMemoryStore: 1073741824
+    # -- Maximum file storage for JetStream (bytes, default 10GB)
+    maxFileStore: 10737418240
+    # -- Maximum payload size (bytes, default 8MB)
+    maxPayload: 8388608
+    # -- Maximum pending bytes (bytes, default 64MB)
+    maxPending: 67108864
+
     # -- NATS persistence configuration
     persistence:
       # -- Enable persistence for NATS data

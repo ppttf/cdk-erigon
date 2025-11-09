@@ -39,6 +39,7 @@ spec:
           containerPort: 4222
           protocol: TCP
         {{- end }}
+        {{- if or .Values.sequencer.persistence.enabled .Values.sequencer.nats.embedded }}
         volumeMounts:
         {{- if .Values.sequencer.persistence.enabled }}
         - name: data
@@ -52,6 +53,7 @@ spec:
         - name: nats-config
           mountPath: /etc/nats
           readOnly: true
+        {{- end }}
         {{- end }}
         resources:
           {{- toYaml .Values.sequencer.resources | nindent 10 }}

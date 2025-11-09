@@ -14,11 +14,11 @@ data:
 
     jetstream {
       store_dir: "/data/nats"
-      max_memory_store: 1073741824
-      max_file_store: 10737418240
+      max_memory_store: {{ printf "%.0f" .Values.sequencer.nats.maxMemoryStore }}
+      max_file_store: {{ printf "%.0f" .Values.sequencer.nats.maxFileStore }}
     }
 
-    max_payload: 8388608
-    max_pending: 67108864
+    max_payload: {{ printf "%.0f" .Values.sequencer.nats.maxPayload }}
+    max_pending: {{ printf "%.0f" .Values.sequencer.nats.maxPending }}
   {{- end }}
 {{- end }}

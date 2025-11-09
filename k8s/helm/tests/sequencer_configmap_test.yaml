@@ -45,3 +45,25 @@ tests:
     asserts:
       - notExists:
           path: data["nats.conf"]
+
+  - it: should allow custom NATS configuration values
+    set:
+      sequencer.enabled: true
+      sequencer.nats.embedded: true
+      sequencer.nats.maxMemoryStore: 2147483648
+      sequencer.nats.maxFileStore: 21474836480
+      sequencer.nats.maxPayload: 16777216
+      sequencer.nats.maxPending: 134217728
+    asserts:
+      - matchRegex:
+          path: data["nats.conf"]
+          pattern: "max_memory_store: 2147483648"
+      - matchRegex:
+          path: data["nats.conf"]
+          pattern: "max_file_store: 21474836480"
+      - matchRegex:
+          path: data["nats.conf"]
+          pattern: "max_payload: 16777216"
+      - matchRegex:
+          path: data["nats.conf"]
+          pattern: "max_pending: 134217728"
