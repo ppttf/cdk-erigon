@@ -1,0 +1,111 @@
+# Default values for cdk-erigon
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- Global image configuration
+image:
+  # -- Image repository
+  repository: cdk-erigon
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+  # -- Image tag (defaults to chart appVersion if not set)
+  tag: ""
+
+# -- Image pull secrets
+imagePullSecrets: []
+
+# -- Override chart name
+nameOverride: ""
+# -- Override full name
+fullnameOverride: ""
+
+# -- Sequencer configuration
+sequencer:
+  # -- Enable sequencer component
+  enabled: true
+
+  # -- Number of sequencer replicas (must be 1 for embedded NATS)
+  replicas: 1
+
+  # -- NATS configuration
+  nats:
+    # -- Enable embedded NATS server
+    embedded: true
+
+    # -- NATS persistence configuration
+    persistence:
+      # -- Enable persistence for NATS data
+      enabled: true
+      # -- Storage class for NATS PVC
+      storageClass: ""
+      # -- Size of NATS storage
+      size: 10Gi
+
+  # -- Blockchain data persistence
+  persistence:
+    # -- Enable persistence for blockchain data
+    enabled: true
+    # -- Storage class for data PVC
+    storageClass: ""
+    # -- Size of data storage
+    size: 100Gi
+
+  # -- Resource requests and limits
+  resources:
+    requests:
+      memory: 2Gi
+      cpu: 1000m
+    limits:
+      memory: 4Gi
+      cpu: 2000m
+
+  # -- Security context for sequencer pod
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+
+  # -- Container security context
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false
+    capabilities:
+      drop:
+        - ALL
+
+# -- RPC node configuration
+rpc:
+  # -- Enable RPC nodes
+  enabled: false
+
+  # -- Number of RPC replicas
+  replicas: 1
+
+  # -- Resource requests and limits
+  resources:
+    requests:
+      memory: 2Gi
+      cpu: 1000m
+    limits:
+      memory: 4Gi
+      cpu: 2000m
+
+  # -- Security context for RPC pod
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+
+  # -- Container security context
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false
+    capabilities:
+      drop:
+        - ALL

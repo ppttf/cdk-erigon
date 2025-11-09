@@ -125,3 +125,5 @@ zk/debug_tools/rpc-cache/rpc-cache
 
 /dynamic*.json
 /dynamic*.yaml
+.local
+.claude
