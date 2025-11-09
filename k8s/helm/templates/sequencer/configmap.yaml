@@ -7,7 +7,6 @@ metadata:
     {{- include "cdk-erigon.labels" . | nindent 4 }}
     component: sequencer
 data:
-  {{- if .Values.sequencer.nats.embedded }}
   nats.conf: |
     port: 4222
     server_name: {{ include "cdk-erigon.fullname" . }}-sequencer
@@ -20,5 +19,4 @@ data:
 
     max_payload: {{ printf "%.0f" .Values.sequencer.nats.maxPayload }}
     max_pending: {{ printf "%.0f" .Values.sequencer.nats.maxPending }}
-  {{- end }}
 {{- end }}
