@@ -63,7 +63,7 @@ if [ -d "k8s/test-values" ]; then
 
         if helm template test "$CHART_DIR" \
             --values "$values_file" \
-            --debug > /tmp/rendered.yaml 2>&1; then
+            > /tmp/rendered.yaml 2>&1; then
 
             # Validate with kubeconform
             if kubeconform -strict -summary /tmp/rendered.yaml > /dev/null 2>&1; then
