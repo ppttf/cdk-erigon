@@ -86,6 +86,37 @@ sequencer:
       drop:
         - ALL
 
+  # Chain configuration for Erigon
+  chainConfig:
+    # -- Enable chain config ConfigMap
+    enabled: false
+    # -- Data directory path
+    datadir: /data
+    # -- Chain name (e.g., hermez-bali, hermez-dev, hermez-mainnet)
+    chain: ""
+    # -- L2 chain ID (required)
+    chainId: 0
+    # -- L1 chain ID
+    l1ChainId: 0
+    # -- L1 RPC URL
+    l1RpcUrl: ""
+    # -- L2 sequencer RPC URL
+    l2SequencerRpcUrl: ""
+    # -- L2 datastreamer URL
+    l2DatastreamerUrl: ""
+    # -- Sequencer contract address
+    addressSequencer: ""
+    # -- ZkEVM contract address
+    addressZkevm: ""
+    # -- Rollup contract address
+    addressRollup: ""
+    # -- GER Manager contract address
+    addressGerManager: ""
+    # -- L1 first block number
+    l1FirstBlock: 0
+    # -- L1 rollup ID
+    l1RollupId: 1
+
 # -- RPC node configuration
 rpc:
   # -- Enable RPC nodes

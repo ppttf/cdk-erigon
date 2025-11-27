@@ -1,0 +1,39 @@
+# Values for Bali testnet deployment
+# Usage: helm install cdk-erigon ./k8s/helm -f k8s/helm/values-bali.yaml
+
+image:
+  repository: cdk-erigon
+  tag: latest
+
+sequencer:
+  enabled: true
+  replicas: 1
+
+  nats:
+    embedded: true
+    persistence:
+      enabled: true
+      size: 10Gi
+
+  persistence:
+    enabled: true
+    size: 100Gi
+
+  chainConfig:
+    enabled: true
+    datadir: /data
+    chain: hermez-bali
+    chainId: 2440
+    l1ChainId: 11155111
+    l1RpcUrl: "https://rpc.sepolia.org"
+    l2SequencerRpcUrl: "https://rpc.internal.zkevm-rpc.com/"
+    l2DatastreamerUrl: "datastream.internal.zkevm-rpc.com:6900"
+    addressSequencer: "0x9aeCf44E36f20DC407d1A580630c9a2419912dcB"
+    addressZkevm: "0x89BA0Ed947a88fe43c22Ae305C0713eC8a7Eb361"
+    addressRollup: "0xE2EF6215aDc132Df6913C8DD16487aBF118d1764"
+    addressGerManager: "0x2968D6d736178f8FE7393CC33C87f29D9C287e78"
+    l1FirstBlock: 4794475
+    l1RollupId: 1
+
+rpc:
+  enabled: false

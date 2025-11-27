@@ -23,23 +23,34 @@ spec:
         runAsNonRoot: {{ .Values.sequencer.securityContext.runAsNonRoot }}
         runAsUser: {{ .Values.sequencer.securityContext.runAsUser }}
         fsGroup: {{ .Values.sequencer.securityContext.fsGroup }}
-      {{- if .Values.sequencer.nats.embedded }}
+      {{- if or .Values.sequencer.nats.embedded .Values.sequencer.chainConfig.enabled }}
       volumes:
+      {{- if .Values.sequencer.nats.embedded }}
       - name: nats-config
         configMap:
           name: {{ include "cdk-erigon.fullname" . }}-sequencer
+      {{- end }}
+      {{- if .Values.sequencer.chainConfig.enabled }}
+      - name: chain-config
+        configMap:
+          name: {{ include "cdk-erigon.fullname" . }}-sequencer-chain
+      {{- end }}
       {{- end }}
       containers:
       - name: erigon
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- if .Values.sequencer.chainConfig.enabled }}
+        args:
+        - "--config=/config/erigon.yaml"
+        {{- end }}
         {{- if .Values.sequencer.nats.embedded }}
         ports:
         - name: nats
           containerPort: 4222
           protocol: TCP
         {{- end }}
-        {{- if or .Values.sequencer.persistence.enabled .Values.sequencer.nats.embedded }}
+        {{- if or .Values.sequencer.persistence.enabled .Values.sequencer.nats.embedded .Values.sequencer.chainConfig.enabled }}
         volumeMounts:
         {{- if .Values.sequencer.persistence.enabled }}
         - name: data
@@ -52,6 +63,11 @@ spec:
         {{- if .Values.sequencer.nats.embedded }}
         - name: nats-config
           mountPath: /etc/nats
+          readOnly: true
+        {{- end }}
+        {{- if .Values.sequencer.chainConfig.enabled }}
+        - name: chain-config
+          mountPath: /config
           readOnly: true
         {{- end }}
         {{- end }}
