@@ -22,7 +22,10 @@ spec:
       securityContext:
         runAsNonRoot: {{ .Values.sequencer.securityContext.runAsNonRoot }}
         runAsUser: {{ .Values.sequencer.securityContext.runAsUser }}
+        runAsGroup: {{ .Values.sequencer.securityContext.runAsGroup }}
         fsGroup: {{ .Values.sequencer.securityContext.fsGroup }}
+        seccompProfile:
+          type: {{ .Values.sequencer.securityContext.seccompProfile.type }}
       volumes:
       {{- if .Values.sequencer.nats.embedded }}
       - name: nats-config

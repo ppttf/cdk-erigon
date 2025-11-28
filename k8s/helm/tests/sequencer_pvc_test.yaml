@@ -89,3 +89,13 @@ tests:
             name: nats-config
             mountPath: /etc/nats
             readOnly: true
+
+  - it: should have no volumeClaimTemplates when NATS enabled but all persistence disabled
+    set:
+      sequencer.enabled: true
+      sequencer.nats.embedded: true
+      sequencer.persistence.enabled: false
+      sequencer.nats.persistence.enabled: false
+    asserts:
+      - notExists:
+          path: spec.volumeClaimTemplates

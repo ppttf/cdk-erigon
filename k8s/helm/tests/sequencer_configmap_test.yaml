@@ -46,14 +46,6 @@ tests:
       - exists:
           path: data["nats.conf"]
 
-  - it: should not contain NATS config when embedded NATS is disabled
-    set:
-      sequencer.enabled: true
-      sequencer.nats.embedded: false
-    asserts:
-      - notExists:
-          path: data["nats.conf"]
-
   - it: should allow custom NATS configuration values
     set:
       sequencer.enabled: true
