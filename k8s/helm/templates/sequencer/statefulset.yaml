@@ -23,7 +23,6 @@ spec:
         runAsNonRoot: {{ .Values.sequencer.securityContext.runAsNonRoot }}
         runAsUser: {{ .Values.sequencer.securityContext.runAsUser }}
         fsGroup: {{ .Values.sequencer.securityContext.fsGroup }}
-      {{- if or .Values.sequencer.nats.embedded .Values.sequencer.chainConfig.enabled }}
       volumes:
       {{- if .Values.sequencer.nats.embedded }}
       - name: nats-config
@@ -35,6 +34,10 @@ spec:
         configMap:
           name: {{ include "cdk-erigon.fullname" . }}-sequencer-chain
       {{- end }}
+      {{- if .Values.sequencer.l1Proxy.enabled }}
+      - name: l1-proxy-cache
+        emptyDir:
+          sizeLimit: {{ .Values.sequencer.l1Proxy.cacheSize }}
       {{- end }}
       containers:
       - name: erigon
@@ -50,7 +53,6 @@ spec:
           containerPort: 4222
           protocol: TCP
         {{- end }}
-        {{- if or .Values.sequencer.persistence.enabled .Values.sequencer.nats.embedded .Values.sequencer.chainConfig.enabled }}
         volumeMounts:
         {{- if .Values.sequencer.persistence.enabled }}
         - name: data
@@ -70,9 +72,40 @@ spec:
           mountPath: /config
           readOnly: true
         {{- end }}
-        {{- end }}
         resources:
           {{- toYaml .Values.sequencer.resources | nindent 10 }}
+      {{- if .Values.sequencer.l1Proxy.enabled }}
+      - name: l1-proxy
+        image: "{{ .Values.sequencer.l1Proxy.image.repository }}:{{ .Values.sequencer.l1Proxy.image.tag }}"
+        imagePullPolicy: {{ .Values.sequencer.l1Proxy.image.pullPolicy }}
+        args:
+        - "-file=/cache/cache.db"
+        ports:
+        - name: l1-proxy
+          containerPort: 6969
+          protocol: TCP
+        volumeMounts:
+        - name: l1-proxy-cache
+          mountPath: /cache
+        resources:
+          {{- toYaml .Values.sequencer.l1Proxy.resources | nindent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        livenessProbe:
+          tcpSocket:
+            port: l1-proxy
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: l1-proxy
+          initialDelaySeconds: 2
+          periodSeconds: 5
+      {{- end }}
   {{- if or .Values.sequencer.persistence.enabled (and .Values.sequencer.nats.embedded .Values.sequencer.nats.persistence.enabled) }}
   volumeClaimTemplates:
   {{- if .Values.sequencer.persistence.enabled }}

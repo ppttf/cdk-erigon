@@ -116,6 +116,46 @@ sequencer:
     l1FirstBlock: 0
     # -- L1 rollup ID
     l1RollupId: 1
+    # -- Default gas price (wei)
+    defaultGasPrice: 1000000000
+    # -- Maximum gas price (0 = no limit)
+    maxGasPrice: 0
+    # -- Gas price factor
+    gasPriceFactor: 0.12
+    # -- Enable shadow sequencer mode
+    shadowSequencer: false
+    # -- Torrent port
+    torrentPort: 42070
+    # -- Executor strict mode
+    executorStrict: false
+    # -- Data stream port
+    dataStreamPort: 6900
+    # -- Data stream NATS host
+    dataStreamNatsHost: "0.0.0.0"
+    # -- Data stream NATS port
+    dataStreamNatsPort: 4222
+
+  # -- L1 RPC cache proxy sidecar configuration
+  # When enabled, runs as sidecar container in sequencer pod
+  # Set l1RpcUrl to: http://localhost:6969?chainid=CHAIN_ID&endpoint=URL_ENCODED_L1_RPC
+  l1Proxy:
+    # -- Enable L1 RPC cache proxy sidecar
+    enabled: false
+    # -- L1 proxy image configuration
+    image:
+      repository: cdk-erigon-l1-proxy
+      tag: latest
+      pullPolicy: IfNotPresent
+    # -- Cache size limit (emptyDir)
+    cacheSize: 1Gi
+    # -- Resource requests and limits
+    resources:
+      requests:
+        memory: 64Mi
+        cpu: 50m
+      limits:
+        memory: 128Mi
+        cpu: 200m
 
 # -- RPC node configuration
 rpc:
