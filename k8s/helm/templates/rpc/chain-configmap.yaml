@@ -40,6 +40,10 @@ data:
     zkevm.l2-sequencer-rpc-url: {{ .Values.rpc.chainConfig.l2SequencerRpcUrl }}
     zkevm.l2-datastreamer-url: {{ .Values.rpc.chainConfig.l2DatastreamerUrl }}
 
+    # NATS seed (sequencer connection)
+    zkevm.l2-nats-seed-host: {{ .Values.rpc.chainConfig.natsSeedHost }}
+    zkevm.l2-nats-seed-port: {{ .Values.rpc.chainConfig.natsSeedPort | int64 }}
+
     {{- if .Values.rpc.nats.enabled }}
     # Local NATS for downstream consumers
     zkevm.data-stream-nats-host: {{ .Values.rpc.chainConfig.dataStreamNatsHost }}

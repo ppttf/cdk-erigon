@@ -44,6 +44,8 @@ l1Proxy:
     storageClass: ""
     # -- Size of cache storage
     size: 5Gi
+  # -- Cache size limit (when persistence is disabled)
+  cacheSize: 1Gi
 
 # -- Sequencer configuration
 sequencer:

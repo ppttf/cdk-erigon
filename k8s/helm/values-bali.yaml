@@ -1,5 +1,6 @@
 # Values for Bali testnet deployment
 # Usage: helm install cdk-erigon ./k8s/helm -f k8s/helm/values-bali.yaml -f k8s/helm/values-local.yaml
+# Note: Release name 'cdk-erigon' is required for internal service DNS references
 #
 # With shared L1 proxy (recommended):
 #   URL pattern: http://cdk-erigon-l1-proxy:6969?chainid=11155111&endpoint=<URL_ENCODED_L1_RPC>
@@ -83,6 +84,9 @@ rpc:
     l2SequencerRpcUrl: "https://rpc.internal.zkevm-rpc.com/"
     # Connect to sequencer datastream (NATS mode)
     l2DatastreamerUrl: "cdk-erigon-sequencer:6900"
+    # NATS seed (sequencer NATS address for datastream sync)
+    natsSeedHost: "cdk-erigon-sequencer"
+    natsSeedPort: 4222
     # Local NATS host for downstream (if enabled)
     dataStreamNatsHost: "0.0.0.0"
     dataStreamNatsPort: 4223
