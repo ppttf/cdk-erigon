@@ -18,6 +18,12 @@ spec:
     port: 4222
     targetPort: nats
     protocol: TCP
+  {{- if .Values.sequencer.nats.monitoring.enabled }}
+  - name: nats-mon
+    port: {{ .Values.sequencer.nats.monitoring.port }}
+    targetPort: nats-mon
+    protocol: TCP
+  {{- end }}
   {{- end }}
   {{- if .Values.sequencer.chainConfig.enabled }}
   - name: datastream

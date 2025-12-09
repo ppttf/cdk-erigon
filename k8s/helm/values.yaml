@@ -79,6 +79,13 @@ sequencer:
       # -- Size of NATS storage
       size: 10Gi
 
+    # -- NATS monitoring configuration
+    monitoring:
+      # -- Enable NATS Prometheus metrics endpoint
+      enabled: false
+      # -- Monitoring HTTP port
+      port: 8222
+
   # -- Blockchain data persistence
   persistence:
     # -- Enable persistence for blockchain data
