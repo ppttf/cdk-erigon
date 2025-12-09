@@ -1,0 +1,19 @@
+{{- if .Values.l1Proxy.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cdk-erigon.fullname" . }}-l1-proxy
+  labels:
+    {{- include "cdk-erigon.labels" . | nindent 4 }}
+    app.kubernetes.io/component: l1-proxy
+spec:
+  type: ClusterIP
+  ports:
+  - port: 6969
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "cdk-erigon.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: l1-proxy
+{{- end }}

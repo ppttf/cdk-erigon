@@ -127,3 +127,6 @@ zk/debug_tools/rpc-cache/rpc-cache
 /dynamic*.yaml
 .local
 .claude
+
+# Helm local values files (contain secrets)
+k8s/helm/*-local.yaml

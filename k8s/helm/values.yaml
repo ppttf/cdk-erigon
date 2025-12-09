@@ -19,6 +19,32 @@ nameOverride: ""
 # -- Override full name
 fullnameOverride: ""
 
+# -- L1 RPC cache proxy (shared deployment)
+l1Proxy:
+  # -- Enable shared L1 RPC cache proxy
+  enabled: false
+  # -- L1 proxy image configuration
+  image:
+    repository: cdk-erigon-l1-proxy
+    tag: latest
+    pullPolicy: IfNotPresent
+  # -- Resource requests and limits
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 100m
+    limits:
+      memory: 1Gi
+      cpu: 500m
+  # -- Persistence configuration for cache
+  persistence:
+    # -- Enable persistence for L1 cache
+    enabled: true
+    # -- Storage class for cache PVC
+    storageClass: ""
+    # -- Size of cache storage
+    size: 5Gi
+
 # -- Sequencer configuration
 sequencer:
   # -- Enable sequencer component
@@ -63,10 +89,10 @@ sequencer:
   # -- Resource requests and limits
   resources:
     requests:
-      memory: 2Gi
+      memory: 8Gi
       cpu: 1000m
     limits:
-      memory: 4Gi
+      memory: 16Gi
       cpu: 2000m
 
   # -- Security context for sequencer pod
@@ -135,28 +161,6 @@ sequencer:
     # -- Data stream NATS port
     dataStreamNatsPort: 4222
 
-  # -- L1 RPC cache proxy sidecar configuration
-  # When enabled, runs as sidecar container in sequencer pod
-  # Set l1RpcUrl to: http://localhost:6969?chainid=CHAIN_ID&endpoint=URL_ENCODED_L1_RPC
-  l1Proxy:
-    # -- Enable L1 RPC cache proxy sidecar
-    enabled: false
-    # -- L1 proxy image configuration
-    image:
-      repository: cdk-erigon-l1-proxy
-      tag: latest
-      pullPolicy: IfNotPresent
-    # -- Cache size limit (emptyDir)
-    cacheSize: 1Gi
-    # -- Resource requests and limits
-    resources:
-      requests:
-        memory: 64Mi
-        cpu: 50m
-      limits:
-        memory: 128Mi
-        cpu: 200m
-
 # -- RPC node configuration
 rpc:
   # -- Enable RPC nodes
@@ -164,6 +168,25 @@ rpc:
 
   # -- Number of RPC replicas
   replicas: 1
+
+  # -- Service configuration
+  service:
+    # -- Service type (ClusterIP, LoadBalancer, NodePort)
+    type: ClusterIP
+
+  # -- NATS configuration for RPC nodes
+  nats:
+    # -- Enable local NATS server (for downstream consumers)
+    enabled: false
+
+  # -- Blockchain data persistence
+  persistence:
+    # -- Enable persistence for blockchain data
+    enabled: true
+    # -- Storage class for data PVC
+    storageClass: ""
+    # -- Size of data storage
+    size: 100Gi
 
   # -- Resource requests and limits
   resources:
@@ -190,3 +213,48 @@ rpc:
     capabilities:
       drop:
         - ALL
+
+  # Chain configuration for RPC node
+  chainConfig:
+    # -- Data directory path
+    datadir: /data
+    # -- Chain name (e.g., hermez-bali, hermez-dev, hermez-mainnet)
+    chain: ""
+    # -- L2 chain ID (required)
+    chainId: 0
+    # -- L1 chain ID
+    l1ChainId: 0
+    # -- L1 RPC URL
+    l1RpcUrl: ""
+    # -- L2 sequencer RPC URL
+    l2SequencerRpcUrl: ""
+    # -- L2 datastreamer URL
+    l2DatastreamerUrl: ""
+    # -- NATS seed host (sequencer NATS address)
+    natsSeedHost: ""
+    # -- NATS seed port (sequencer NATS port, typically 4222)
+    natsSeedPort: 4222
+    # -- Data stream NATS host (local)
+    dataStreamNatsHost: "0.0.0.0"
+    # -- Data stream NATS port (local, different from sequencer)
+    dataStreamNatsPort: 4223
+    # -- Sequencer contract address
+    addressSequencer: ""
+    # -- ZkEVM contract address
+    addressZkevm: ""
+    # -- Rollup contract address
+    addressRollup: ""
+    # -- GER Manager contract address
+    addressGerManager: ""
+    # -- L1 first block number
+    l1FirstBlock: 0
+    # -- L1 rollup ID
+    l1RollupId: 1
+    # -- Default gas price (wei)
+    defaultGasPrice: 1000000000
+    # -- Maximum gas price (0 = no limit)
+    maxGasPrice: 0
+    # -- Gas price factor
+    gasPriceFactor: 0.12
+    # -- Torrent port (different from sequencer)
+    torrentPort: 42071

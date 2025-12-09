@@ -1,16 +1,23 @@
 # Values for Bali testnet deployment
-# Usage: helm install cdk-erigon ./k8s/helm -f k8s/helm/values-bali.yaml
+# Usage: helm install cdk-erigon ./k8s/helm -f k8s/helm/values-bali.yaml -f k8s/helm/values-local.yaml
 #
-# With L1 proxy (recommended):
-#   --set sequencer.chainConfig.l1RpcUrl="http://localhost:6969?chainid=2440&endpoint=https%3A%2F%2Feth-sepolia.g.alchemy.com%2Fv2%2FYOUR_API_KEY"
+# With shared L1 proxy (recommended):
+#   URL pattern: http://cdk-erigon-l1-proxy:6969?chainid=11155111&endpoint=<URL_ENCODED_L1_RPC>
+#   Set actual L1 endpoint in values-local.yaml
 #
 # Direct L1 RPC (no caching):
-#   --set sequencer.l1Proxy.enabled=false \
+#   --set l1Proxy.enabled=false \
 #   --set sequencer.chainConfig.l1RpcUrl="https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY"
 
 image:
   repository: cdk-erigon
   tag: latest
+
+l1Proxy:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 10Gi
 
 sequencer:
   enabled: true
@@ -32,8 +39,7 @@ sequencer:
     chain: hermez-bali
     chainId: 2440
     l1ChainId: 11155111
-    # L1 RPC URL - set via --set flag with your API key
-    # Via proxy: http://localhost:6969?chainid=2440&endpoint=https%3A%2F%2Feth-sepolia.g.alchemy.com%2Fv2%2FYOUR_API_KEY
+    # L1 RPC URL via shared proxy - actual endpoint set in values-local.yaml
     l1RpcUrl: ""
     l2SequencerRpcUrl: "https://rpc.internal.zkevm-rpc.com/"
     l2DatastreamerUrl: "datastream.internal.zkevm-rpc.com:6900"
@@ -53,12 +59,40 @@ sequencer:
     dataStreamNatsHost: "0.0.0.0"
     dataStreamNatsPort: 4222
 
-  # -- L1 RPC cache proxy sidecar
-  l1Proxy:
-    enabled: true
-    image:
-      repository: cdk-erigon-l1-proxy
-      tag: latest
-
 rpc:
-  enabled: false
+  enabled: true
+  replicas: 1
+
+  service:
+    type: ClusterIP
+
+  nats:
+    enabled: false
+
+  persistence:
+    enabled: true
+    size: 100Gi
+
+  chainConfig:
+    datadir: /data
+    chain: hermez-bali
+    chainId: 2440
+    l1ChainId: 11155111
+    # L1 RPC URL via shared proxy - actual endpoint set in values-local.yaml
+    l1RpcUrl: ""
+    l2SequencerRpcUrl: "https://rpc.internal.zkevm-rpc.com/"
+    # Connect to sequencer datastream (NATS mode)
+    l2DatastreamerUrl: "cdk-erigon-sequencer:6900"
+    # Local NATS host for downstream (if enabled)
+    dataStreamNatsHost: "0.0.0.0"
+    dataStreamNatsPort: 4223
+    addressSequencer: "0x9aeCf44E36f20DC407d1A580630c9a2419912dcB"
+    addressZkevm: "0x89BA0Ed947a88fe43c22Ae305C0713eC8a7Eb361"
+    addressRollup: "0xE2EF6215aDc132Df6913C8DD16487aBF118d1764"
+    addressGerManager: "0x2968D6d736178f8FE7393CC33C87f29D9C287e78"
+    l1FirstBlock: 7794475
+    l1RollupId: 1
+    defaultGasPrice: 1000000000
+    maxGasPrice: 0
+    gasPriceFactor: 0.12
+    torrentPort: 42071

@@ -12,11 +12,17 @@ spec:
   selector:
     {{- include "cdk-erigon.selectorLabels" . | nindent 4 }}
     component: sequencer
-  {{- if .Values.sequencer.nats.embedded }}
   ports:
+  {{- if .Values.sequencer.nats.embedded }}
   - name: nats
     port: 4222
     targetPort: nats
+    protocol: TCP
+  {{- end }}
+  {{- if .Values.sequencer.chainConfig.enabled }}
+  - name: datastream
+    port: {{ .Values.sequencer.chainConfig.dataStreamPort | default 6900 }}
+    targetPort: datastream
     protocol: TCP
   {{- end }}
 {{- end }}
