@@ -64,6 +64,23 @@ helm install prometheus prometheus-community/kube-prometheus-stack
 
 **Endpoint**: `http://<sequencer-pod>:8222/metrics`
 
+### Grafana Dashboards
+
+`grafana-dashboards.yaml` - ConfigMap containing pre-built Grafana dashboards for NATS and cdk-erigon.
+
+**Requires**:
+- `monitoring.enabled: true`
+- `monitoring.grafana.dashboards.enabled: true`
+- Grafana installed with dashboard provisioning configured
+
+**Dashboards included**:
+- **NATS JetStream**: Stream metrics, storage usage, consumer lag, message throughput
+- **cdk-erigon Performance**: Block sync progress, memory/CPU usage, RPC request rate, database size
+
+**Source files**:
+- `dashboards/nats-jetstream.json`
+- `dashboards/cdk-erigon-performance.json`
+
 ## Usage
 
 ### Global Monitoring
@@ -86,6 +103,41 @@ sequencer:
     monitoring:
       enabled: true
       port: 8222
+```
+
+### Grafana Dashboards
+
+```yaml
+monitoring:
+  enabled: true
+  grafana:
+    dashboards:
+      enabled: true
+```
+
+**Grafana Configuration**:
+
+The dashboards ConfigMap uses the label `grafana_dashboard: "1"` for automatic discovery by Grafana's sidecar. Configure Grafana to watch for this label:
+
+```yaml
+# Grafana Helm values
+sidecar:
+  dashboards:
+    enabled: true
+    label: grafana_dashboard
+    labelValue: "1"
+```
+
+**Manual Import**:
+
+If not using automatic provisioning, dashboards can be manually imported:
+
+```bash
+# Export dashboard JSON
+kubectl get configmap <release>-cdk-erigon-grafana-dashboards -o jsonpath='{.data.nats-jetstream\.json}' > nats-jetstream.json
+kubectl get configmap <release>-cdk-erigon-grafana-dashboards -o jsonpath='{.data.cdk-erigon-performance\.json}' > cdk-erigon-performance.json
+
+# Import via Grafana UI: Create > Import > Upload JSON file
 ```
 
 ## Testing

@@ -1,0 +1,14 @@
+{{- if and .Values.monitoring.enabled .Values.monitoring.grafana.dashboards.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cdk-erigon.fullname" . }}-grafana-dashboards
+  labels:
+    {{- include "cdk-erigon.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+  nats-jetstream.json: |-
+{{ .Files.Get "dashboards/nats-jetstream.json" | indent 4 }}
+  cdk-erigon-performance.json: |-
+{{ .Files.Get "dashboards/cdk-erigon-performance.json" | indent 4 }}
+{{- end }}

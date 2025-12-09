@@ -31,6 +31,12 @@ monitoring:
     interval: 30s
     # -- Scrape timeout
     scrapeTimeout: 10s
+  # -- Grafana dashboard configuration
+  grafana:
+    # -- Dashboard provisioning
+    dashboards:
+      # -- Enable Grafana dashboard ConfigMaps
+      enabled: false
 
 # -- L1 RPC cache proxy (shared deployment)
 l1Proxy:
