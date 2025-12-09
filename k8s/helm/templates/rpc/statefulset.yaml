@@ -51,6 +51,11 @@ spec:
           containerPort: {{ .Values.rpc.chainConfig.dataStreamNatsPort }}
           protocol: TCP
         {{- end }}
+        {{- if .Values.monitoring.enabled }}
+        - name: metrics
+          containerPort: 6060
+          protocol: TCP
+        {{- end }}
         volumeMounts:
         - name: data
           mountPath: /data

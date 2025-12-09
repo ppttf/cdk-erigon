@@ -1,0 +1,88 @@
+suite: test RPC ServiceMonitor
+templates:
+  - monitoring/servicemonitor-rpc.yaml
+tests:
+  - it: should not create ServiceMonitor when monitoring disabled
+    set:
+      monitoring.enabled: false
+      rpc.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not create when serviceMonitor disabled
+    set:
+      monitoring.enabled: true
+      monitoring.serviceMonitor.enabled: false
+      rpc.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create ServiceMonitor when monitoring enabled
+    set:
+      monitoring.enabled: true
+      monitoring.serviceMonitor.enabled: true
+      rpc.enabled: true
+    asserts:
+      - isKind:
+          of: ServiceMonitor
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-cdk-erigon-rpc
+
+  - it: should configure correct selector labels
+    set:
+      monitoring.enabled: true
+      monitoring.serviceMonitor.enabled: true
+      rpc.enabled: true
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels.component
+          value: rpc
+
+  - it: should configure metrics endpoint
+    set:
+      monitoring.enabled: true
+      monitoring.serviceMonitor.enabled: true
+      rpc.enabled: true
+    asserts:
+      - equal:
+          path: spec.endpoints[0].port
+          value: metrics
+      - equal:
+          path: spec.endpoints[0].interval
+          value: 30s
+      - equal:
+          path: spec.endpoints[0].scrapeTimeout
+          value: 10s
+      - equal:
+          path: spec.endpoints[0].path
+          value: /debug/metrics/prometheus
+      - equal:
+          path: spec.endpoints[0].scheme
+          value: http
+
+  - it: should use custom interval and timeout
+    set:
+      monitoring.enabled: true
+      monitoring.serviceMonitor.enabled: true
+      rpc.enabled: true
+      monitoring.serviceMonitor.interval: 60s
+      monitoring.serviceMonitor.scrapeTimeout: 20s
+    asserts:
+      - equal:
+          path: spec.endpoints[0].interval
+          value: 60s
+      - equal:
+          path: spec.endpoints[0].scrapeTimeout
+          value: 20s
+
+  - it: should not create when RPC disabled
+    set:
+      rpc.enabled: false
+      monitoring.enabled: true
+      monitoring.serviceMonitor.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0

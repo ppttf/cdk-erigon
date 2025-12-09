@@ -19,6 +19,19 @@ nameOverride: ""
 # -- Override full name
 fullnameOverride: ""
 
+# -- Global monitoring configuration
+monitoring:
+  # -- Enable monitoring for all components
+  enabled: false
+  # -- ServiceMonitor configuration (requires Prometheus Operator)
+  serviceMonitor:
+    # -- Enable ServiceMonitor resources
+    enabled: true
+    # -- Scrape interval
+    interval: 30s
+    # -- Scrape timeout
+    scrapeTimeout: 10s
+
 # -- L1 RPC cache proxy (shared deployment)
 l1Proxy:
   # -- Enable shared L1 RPC cache proxy

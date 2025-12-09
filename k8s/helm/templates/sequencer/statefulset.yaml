@@ -61,6 +61,11 @@ spec:
           containerPort: {{ .Values.sequencer.chainConfig.dataStreamPort | default 6900 }}
           protocol: TCP
         {{- end }}
+        {{- if .Values.monitoring.enabled }}
+        - name: metrics
+          containerPort: 6060
+          protocol: TCP
+        {{- end }}
         volumeMounts:
         {{- if .Values.sequencer.persistence.enabled }}
         - name: data

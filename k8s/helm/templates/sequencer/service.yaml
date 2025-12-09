@@ -31,4 +31,10 @@ spec:
     targetPort: datastream
     protocol: TCP
   {{- end }}
+  {{- if .Values.monitoring.enabled }}
+  - name: metrics
+    port: 6060
+    targetPort: metrics
+    protocol: TCP
+  {{- end }}
 {{- end }}
