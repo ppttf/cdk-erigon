@@ -37,6 +37,10 @@ monitoring:
     dashboards:
       # -- Enable Grafana dashboard ConfigMaps
       enabled: false
+  # -- Prometheus stack configuration
+  prometheus:
+    # -- Enable kube-prometheus-stack (Prometheus + Grafana)
+    enabled: false
 
 # -- L1 RPC cache proxy (shared deployment)
 l1Proxy:
@@ -286,3 +290,55 @@ rpc:
     gasPriceFactor: 0.12
     # -- Torrent port (different from sequencer)
     torrentPort: 42071
+
+# -- kube-prometheus-stack subchart configuration
+# Only applied when monitoring.prometheus.enabled is true
+prometheus:
+  # Prometheus Operator configuration
+  prometheusOperator:
+    enabled: true
+  
+  # Prometheus instance configuration  
+  prometheus:
+    enabled: true
+    prometheusSpec:
+      serviceMonitorSelectorNilUsesHelmValues: false
+      podMonitorSelectorNilUsesHelmValues: false
+      retention: 7d
+      resources:
+        requests:
+          memory: 2Gi
+          cpu: 500m
+        limits:
+          memory: 4Gi
+          cpu: 1000m
+  
+  # Grafana configuration
+  grafana:
+    enabled: true
+    adminPassword: admin
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+        labelValue: "1"
+        searchNamespace: ALL
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 100m
+      limits:
+        memory: 512Mi
+        cpu: 200m
+  
+  # Alertmanager (optional)
+  alertmanager:
+    enabled: false
+  
+  # Node exporter
+  nodeExporter:
+    enabled: true
+  
+  # kube-state-metrics
+  kubeStateMetrics:
+    enabled: true

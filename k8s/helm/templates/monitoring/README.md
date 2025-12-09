@@ -2,16 +2,42 @@
 
 This directory contains monitoring resources for observability integration.
 
-## Prerequisites
+## Quick Start
 
-### Prometheus Operator
-
-ServiceMonitor resources require [Prometheus Operator](https://prometheus-operator.dev/) to be installed in the cluster:
+The chart includes integrated Prometheus and Grafana deployment:
 
 ```bash
-# Using kube-prometheus-stack Helm chart
+# Deploy with full monitoring stack
+helm install cdk-erigon . \
+  --set monitoring.enabled=true \
+  --set monitoring.prometheus.enabled=true \
+  --set monitoring.grafana.dashboards.enabled=true \
+  --set sequencer.nats.monitoring.enabled=true
+
+# Access Grafana (password: admin)
+kubectl port-forward -n default svc/cdk-erigon-prometheus-grafana 3000:80
+# Open http://localhost:3000
+```
+
+## Prerequisites
+
+### Option 1: Integrated (Recommended)
+
+Enable `monitoring.prometheus.enabled` to deploy Prometheus + Grafana as part of the chart.
+
+### Option 2: External Prometheus Operator
+
+If using an existing Prometheus Operator installation:
+
+```bash
+# Install separately
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm install prometheus prometheus-community/kube-prometheus-stack
+
+# Deploy cdk-erigon with ServiceMonitors only
+helm install cdk-erigon . \
+  --set monitoring.enabled=true \
+  --set monitoring.prometheus.enabled=false
 ```
 
 ## Resources
