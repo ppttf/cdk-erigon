@@ -1,0 +1,199 @@
+suite: test rpc statefulset
+templates:
+  - rpc/statefulset.yaml
+
+tests:
+  - it: should render a StatefulSet when rpc is enabled
+    set:
+      rpc.enabled: true
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-cdk-erigon-rpc
+
+  - it: should not render when rpc is disabled
+    set:
+      rpc.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should set replicas from values
+    set:
+      rpc.enabled: true
+      rpc.replicas: 3
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
+
+  - it: should use image from values
+    set:
+      rpc.enabled: true
+      image.repository: test-repo
+      image.tag: test-tag
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: test-repo:test-tag
+
+  - it: should expose HTTP port
+    set:
+      rpc.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: http
+            containerPort: 8545
+            protocol: TCP
+
+  - it: should expose WebSocket port
+    set:
+      rpc.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: ws
+            containerPort: 8546
+            protocol: TCP
+
+  - it: should expose private API port
+    set:
+      rpc.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: private-api
+            containerPort: 9093
+            protocol: TCP
+
+  - it: should expose NATS port when nats is enabled
+    set:
+      rpc.enabled: true
+      rpc.nats.enabled: true
+      rpc.chainConfig.dataStreamNatsPort: 4223
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: nats
+            containerPort: 4223
+            protocol: TCP
+
+  - it: should not expose NATS port when nats is disabled
+    set:
+      rpc.enabled: true
+      rpc.nats.enabled: false
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: nats
+          any: true
+
+  - it: should set pod security context
+    set:
+      rpc.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 1000
+      - equal:
+          path: spec.template.spec.securityContext.runAsGroup
+          value: 1000
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 1000
+
+  - it: should set seccomp profile
+    set:
+      rpc.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.seccompProfile.type
+          value: RuntimeDefault
+
+  - it: should set resource requests and limits
+    set:
+      rpc.enabled: true
+      rpc.resources.requests.memory: 4Gi
+      rpc.resources.limits.cpu: 4000m
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: 4Gi
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: 4000m
+
+  - it: should mount chain config volume
+    set:
+      rpc.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: chain-config
+            mountPath: /config
+            readOnly: true
+
+  - it: should include chain config volume
+    set:
+      rpc.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: chain-config
+            configMap:
+              name: RELEASE-NAME-cdk-erigon-rpc-chain
+
+  - it: should create data PVC
+    set:
+      rpc.enabled: true
+      rpc.persistence.size: 200Gi
+    asserts:
+      - equal:
+          path: spec.volumeClaimTemplates[0].metadata.name
+          value: data
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.resources.requests.storage
+          value: 200Gi
+
+  - it: should use config file arg
+    set:
+      rpc.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args[0]
+          value: "--config=/config/erigon.yaml"
+
+  - it: should include liveness probe
+    set:
+      rpc.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.port
+          value: http
+
+  - it: should include readiness probe
+    set:
+      rpc.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: http

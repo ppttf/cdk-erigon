@@ -1,0 +1,78 @@
+{{- if .Values.l1Proxy.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cdk-erigon.fullname" . }}-l1-proxy
+  labels:
+    {{- include "cdk-erigon.labels" . | nindent 4 }}
+    app.kubernetes.io/component: l1-proxy
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "cdk-erigon.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: l1-proxy
+  template:
+    metadata:
+      labels:
+        {{- include "cdk-erigon.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: l1-proxy
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: l1-proxy
+        image: "{{ .Values.l1Proxy.image.repository }}:{{ .Values.l1Proxy.image.tag }}"
+        imagePullPolicy: {{ .Values.l1Proxy.image.pullPolicy }}
+        args:
+        - "-file=/cache/cache.db"
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+        ports:
+        - name: http
+          containerPort: 6969
+          protocol: TCP
+        volumeMounts:
+        - name: cache
+          mountPath: /cache
+        resources:
+          {{- toYaml .Values.l1Proxy.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 5
+      volumes:
+      - name: cache
+        {{- if .Values.l1Proxy.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "cdk-erigon.fullname" . }}-l1-proxy-cache
+        {{- else }}
+        emptyDir:
+          sizeLimit: {{ .Values.l1Proxy.cacheSize }}
+        {{- end }}
+{{- end }}

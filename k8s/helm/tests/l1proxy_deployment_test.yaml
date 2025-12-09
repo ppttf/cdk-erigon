@@ -1,0 +1,101 @@
+suite: L1 Proxy Deployment
+templates:
+  - l1-proxy/deployment.yaml
+tests:
+  - it: should not create deployment when l1Proxy.enabled is false
+    set:
+      l1Proxy.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create deployment when l1Proxy.enabled is true
+    set:
+      l1Proxy.enabled: true
+      l1Proxy.image.repository: test-proxy
+      l1Proxy.image.tag: v1.0
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-cdk-erigon-l1-proxy
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.strategy.type
+          value: Recreate
+
+  - it: should use correct image
+    set:
+      l1Proxy.enabled: true
+      l1Proxy.image.repository: custom-proxy
+      l1Proxy.image.tag: v2.0
+      l1Proxy.image.pullPolicy: Always
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: custom-proxy:v2.0
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+
+  - it: should configure resources
+    set:
+      l1Proxy.enabled: true
+      l1Proxy.resources.requests.memory: 256Mi
+      l1Proxy.resources.limits.cpu: 1000m
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: 256Mi
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: 1000m
+
+  - it: should use PVC when persistence enabled
+    set:
+      l1Proxy.enabled: true
+      l1Proxy.persistence.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[0].persistentVolumeClaim.claimName
+          value: RELEASE-NAME-cdk-erigon-l1-proxy-cache
+
+  - it: should use emptyDir when persistence disabled
+    set:
+      l1Proxy.enabled: true
+      l1Proxy.persistence.enabled: false
+      l1Proxy.cacheSize: 2Gi
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[0].emptyDir.sizeLimit
+          value: 2Gi
+
+  - it: should configure security context
+    set:
+      l1Proxy.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 1000
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+
+  - it: should configure probes
+    set:
+      l1Proxy.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /health
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: http
