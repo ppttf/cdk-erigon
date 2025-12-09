@@ -1,0 +1,136 @@
+# L1 RPC Cache Proxy Sidecar Tests
+
+suite: test l1 proxy sidecar
+templates:
+  - sequencer/statefulset.yaml
+
+tests:
+  # Test 1: Sidecar not present when disabled
+  - it: should not have l1-proxy container when disabled
+    set:
+      sequencer.enabled: true
+      sequencer.l1Proxy.enabled: false
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers
+          content:
+            name: l1-proxy
+          any: true
+
+  # Test 2: Sidecar present when enabled
+  - it: should have l1-proxy container when enabled
+    set:
+      sequencer.enabled: true
+      sequencer.l1Proxy.enabled: true
+      sequencer.l1Proxy.image.repository: cdk-erigon-l1-proxy
+      sequencer.l1Proxy.image.tag: v1.0.0
+    asserts:
+      - contains:
+          path: spec.template.spec.containers
+          content:
+            name: l1-proxy
+          any: true
+
+  # Test 3: Sidecar uses correct image
+  - it: should use correct image for l1-proxy sidecar
+    set:
+      sequencer.enabled: true
+      sequencer.l1Proxy.enabled: true
+      sequencer.l1Proxy.image.repository: my-repo/l1-proxy
+      sequencer.l1Proxy.image.tag: v2.0.0
+    asserts:
+      - contains:
+          path: spec.template.spec.containers
+          content:
+            name: l1-proxy
+            image: my-repo/l1-proxy:v2.0.0
+          any: true
+
+  # Test 4: Cache volume exists when enabled
+  - it: should have l1-proxy-cache volume when enabled
+    set:
+      sequencer.enabled: true
+      sequencer.l1Proxy.enabled: true
+      sequencer.l1Proxy.cacheSize: 2Gi
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: l1-proxy-cache
+            emptyDir:
+              sizeLimit: 2Gi
+
+  # Test 5: Cache volume not present when disabled
+  - it: should not have l1-proxy-cache volume when disabled
+    set:
+      sequencer.enabled: true
+      sequencer.l1Proxy.enabled: false
+    asserts:
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: l1-proxy-cache
+          any: true
+
+  # Test 6: Sidecar has correct port
+  - it: should expose port 6969 on l1-proxy sidecar
+    set:
+      sequencer.enabled: true
+      sequencer.l1Proxy.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers
+          content:
+            name: l1-proxy
+            ports:
+              - name: l1-proxy
+                containerPort: 6969
+                protocol: TCP
+          any: true
+
+  # Test 7: Sidecar has correct args
+  - it: should pass correct args to l1-proxy sidecar
+    set:
+      sequencer.enabled: true
+      sequencer.l1Proxy.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers
+          content:
+            name: l1-proxy
+            args:
+              - "-file=/cache/cache.db"
+          any: true
+
+  # Test 8: Sidecar has resource limits
+  - it: should set resource limits on l1-proxy sidecar
+    set:
+      sequencer.enabled: true
+      sequencer.l1Proxy.enabled: true
+      sequencer.l1Proxy.resources.requests.memory: 64Mi
+      sequencer.l1Proxy.resources.limits.cpu: 200m
+    asserts:
+      - exists:
+          path: spec.template.spec.containers[1].resources.requests.memory
+      - exists:
+          path: spec.template.spec.containers[1].resources.limits.cpu
+
+  # Test 9: Both containers present when l1Proxy enabled
+  - it: should have both erigon and l1-proxy containers
+    set:
+      sequencer.enabled: true
+      sequencer.l1Proxy.enabled: true
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 2
+      - contains:
+          path: spec.template.spec.containers
+          content:
+            name: erigon
+          any: true
+      - contains:
+          path: spec.template.spec.containers
+          content:
+            name: l1-proxy
+          any: true

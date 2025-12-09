@@ -1,0 +1,101 @@
+suite: test sequencer persistence
+templates:
+  - sequencer/statefulset.yaml
+tests:
+  - it: should have data volumeClaimTemplate when persistence is enabled
+    set:
+      sequencer.enabled: true
+      sequencer.persistence.enabled: true
+      sequencer.persistence.size: 100Gi
+    asserts:
+      - contains:
+          path: spec.volumeClaimTemplates
+          content:
+            metadata:
+              name: data
+            spec:
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 100Gi
+
+  - it: should mount data volume in container when persistence is enabled
+    set:
+      sequencer.enabled: true
+      sequencer.persistence.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: data
+            mountPath: /data
+
+  - it: should have NATS volumeClaimTemplate when NATS persistence is enabled
+    set:
+      sequencer.enabled: true
+      sequencer.nats.embedded: true
+      sequencer.nats.persistence.enabled: true
+      sequencer.nats.persistence.size: 10Gi
+    asserts:
+      - contains:
+          path: spec.volumeClaimTemplates
+          content:
+            metadata:
+              name: nats-storage
+            spec:
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 10Gi
+
+  - it: should mount NATS volume when NATS persistence is enabled
+    set:
+      sequencer.enabled: true
+      sequencer.nats.embedded: true
+      sequencer.nats.persistence.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: nats-storage
+            mountPath: /data/nats
+
+  - it: should use custom storage class when specified
+    set:
+      sequencer.enabled: true
+      sequencer.persistence.enabled: true
+      sequencer.persistence.storageClass: fast-ssd
+    asserts:
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.storageClassName
+          value: fast-ssd
+
+  - it: should mount configmap when nats is embedded
+    set:
+      sequencer.enabled: true
+      sequencer.nats.embedded: true
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: nats-config
+            configMap:
+              name: RELEASE-NAME-cdk-erigon-sequencer
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: nats-config
+            mountPath: /etc/nats
+            readOnly: true
+
+  - it: should have no volumeClaimTemplates when NATS enabled but all persistence disabled
+    set:
+      sequencer.enabled: true
+      sequencer.nats.embedded: true
+      sequencer.persistence.enabled: false
+      sequencer.nats.persistence.enabled: false
+    asserts:
+      - notExists:
+          path: spec.volumeClaimTemplates

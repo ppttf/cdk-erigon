@@ -1,0 +1,64 @@
+{{- if and .Values.sequencer.enabled .Values.sequencer.chainConfig.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cdk-erigon.fullname" . }}-sequencer-chain
+  labels:
+    {{- include "cdk-erigon.labels" . | nindent 4 }}
+    component: sequencer
+data:
+  erigon.yaml: |
+    datadir: {{ .Values.sequencer.chainConfig.datadir | default "/data" }}
+    chain: {{ .Values.sequencer.chainConfig.chain }}
+    http: true
+    private.api.addr: localhost:9092
+    zkevm.l2-chain-id: {{ printf "%.0f" .Values.sequencer.chainConfig.chainId }}
+    {{- if .Values.sequencer.chainConfig.l2SequencerRpcUrl }}
+    zkevm.l2-sequencer-rpc-url: {{ .Values.sequencer.chainConfig.l2SequencerRpcUrl }}
+    {{- end }}
+    {{- if .Values.sequencer.chainConfig.l2DatastreamerUrl }}
+    zkevm.l2-datastreamer-url: {{ .Values.sequencer.chainConfig.l2DatastreamerUrl }}
+    {{- end }}
+    zkevm.l1-chain-id: {{ printf "%.0f" .Values.sequencer.chainConfig.l1ChainId }}
+    {{- if .Values.sequencer.chainConfig.l1RpcUrl }}
+    zkevm.l1-rpc-url: {{ .Values.sequencer.chainConfig.l1RpcUrl }}
+    {{- end }}
+    {{- if .Values.sequencer.chainConfig.addressSequencer }}
+    zkevm.address-sequencer: "{{ .Values.sequencer.chainConfig.addressSequencer }}"
+    {{- end }}
+    {{- if .Values.sequencer.chainConfig.addressZkevm }}
+    zkevm.address-zkevm: "{{ .Values.sequencer.chainConfig.addressZkevm }}"
+    {{- end }}
+    {{- if .Values.sequencer.chainConfig.addressRollup }}
+    zkevm.address-rollup: "{{ .Values.sequencer.chainConfig.addressRollup }}"
+    {{- end }}
+    {{- if .Values.sequencer.chainConfig.addressGerManager }}
+    zkevm.address-ger-manager: "{{ .Values.sequencer.chainConfig.addressGerManager }}"
+    {{- end }}
+    {{- if .Values.sequencer.chainConfig.l1FirstBlock }}
+    zkevm.l1-first-block: {{ printf "%.0f" .Values.sequencer.chainConfig.l1FirstBlock }}
+    {{- end }}
+    {{- if .Values.sequencer.chainConfig.l1RollupId }}
+    zkevm.l1-rollup-id: {{ printf "%.0f" .Values.sequencer.chainConfig.l1RollupId }}
+    {{- end }}
+    zkevm.default-gas-price: {{ printf "%.0f" .Values.sequencer.chainConfig.defaultGasPrice }}
+    zkevm.max-gas-price: {{ printf "%.0f" .Values.sequencer.chainConfig.maxGasPrice }}
+    zkevm.gas-price-factor: {{ .Values.sequencer.chainConfig.gasPriceFactor }}
+    {{- if .Values.sequencer.chainConfig.shadowSequencer }}
+    zkevm.shadow-sequencer: true
+    {{- end }}
+    torrent.port: {{ printf "%.0f" .Values.sequencer.chainConfig.torrentPort }}
+    zkevm.executor-strict: {{ .Values.sequencer.chainConfig.executorStrict }}
+    zkevm.data-stream-port: {{ printf "%.0f" .Values.sequencer.chainConfig.dataStreamPort }}
+    {{- if .Values.sequencer.nats.embedded }}
+    zkevm.data-stream-host: localhost
+    {{- end }}
+    zkevm.data-stream-nats-host: {{ .Values.sequencer.chainConfig.dataStreamNatsHost }}
+    zkevm.data-stream-nats-port: {{ printf "%.0f" .Values.sequencer.chainConfig.dataStreamNatsPort }}
+    externalcl: true
+    http.api: [eth, debug, net, trace, web3, erigon, zkevm]
+    http.addr: 0.0.0.0
+    http.vhosts: any
+    http.corsdomain: any
+    ws: true
+{{- end }}

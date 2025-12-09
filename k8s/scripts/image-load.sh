@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Load CDK Erigon image into local Kubernetes cluster
-# Supports: kind, k3d, minikube
+# Load container image into local Kubernetes cluster
+# Supports: kind, k3d, minikube, OrbStack
 # Usage: ./image-load.sh [IMAGE] [CLUSTER_NAME]
 #   IMAGE: Docker image name:tag (default: cdk-erigon:k8s-dev-<git-short-hash>)
 #   CLUSTER_NAME: Cluster name (default: auto-detect or "cdk-erigon")
+#
+# Examples:
+#   ./image-load.sh cdk-erigon:local
+#   ./image-load.sh cdk-erigon-l1-proxy:local
 
 # Color output
 RED='\033[0;31m'
@@ -91,12 +95,13 @@ if [ "${LOADED}" = "false" ]; then
     error "No running cluster found named '${CLUSTER_NAME}'. Supported: kind, k3d, minikube"
 fi
 
-info "✓ Image loaded successfully"
+# Extract image name for grep pattern
+IMAGE_NAME=$(echo "${IMAGE}" | cut -d: -f1)
+
+info "Image loaded successfully"
 info ""
 info "Verify with:"
-info "  kind:     docker exec ${CLUSTER_NAME}-control-plane crictl images | grep cdk-erigon"
-info "  k3d:      k3d image list --cluster ${CLUSTER_NAME}"
-info "  minikube: minikube image ls --profile ${CLUSTER_NAME} | grep cdk-erigon"
-info ""
-info "Next step: ./k8s/scripts/validate-build.sh ${IMAGE}"
+info "  kind:     docker exec ${CLUSTER_NAME}-control-plane crictl images | grep ${IMAGE_NAME}"
+info "  k3d:      k3d image list --cluster ${CLUSTER_NAME} | grep ${IMAGE_NAME}"
+info "  minikube: minikube image ls --profile ${CLUSTER_NAME} | grep ${IMAGE_NAME}"
 info ""
