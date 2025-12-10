@@ -16,6 +16,13 @@ Deploy CDK-Erigon blockchain nodes with embedded NATS JetStream on Kubernetes.
 # Add chart dependencies
 helm dependency update
 
+# First-time only: Install Prometheus Operator CRDs
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.87.0/example/prometheus-operator-crd-full/monitoring.coreos.com_servicemonitors.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.87.0/example/prometheus-operator-crd-full/monitoring.coreos.com_prometheuses.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.87.0/example/prometheus-operator-crd-full/monitoring.coreos.com_prometheusrules.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.87.0/example/prometheus-operator-crd-full/monitoring.coreos.com_alertmanagers.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.87.0/example/prometheus-operator-crd-full/monitoring.coreos.com_podmonitors.yaml
+
 # Deploy with full observability stack
 helm install cdk-erigon . \
   -f values-bali.yaml \
@@ -23,11 +30,12 @@ helm install cdk-erigon . \
   --set monitoring.prometheus.enabled=true
 ```
 
-This automatically:
-- Installs Prometheus Operator CRDs (idempotent, works on fresh or existing clusters)
+This:
 - Deploys Prometheus + Grafana
 - Configures ServiceMonitors for all components
 - Provisions NATS and cdk-erigon Grafana dashboards
+
+> **Note:** CRDs must be installed before the helm install. The `kubectl apply --server-side` commands are idempotent and safe to run on clusters that already have the CRDs.
 
 ### Deploy without Monitoring
 
