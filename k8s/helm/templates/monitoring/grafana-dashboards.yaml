@@ -8,7 +8,7 @@ metadata:
     grafana_dashboard: "1"
 data:
   nats-jetstream.json: |-
-{{ .Files.Get "dashboards/nats-jetstream.json" | indent 4 }}
+{{ .Files.Get "dashboards/nats-jetstream.json" | replace "${DS__NATS-PROMETHEUS}" "prometheus" | indent 4 }}
   cdk-erigon-performance.json: |-
-{{ .Files.Get "dashboards/cdk-erigon-performance.json" | indent 4 }}
+{{ .Files.Get "dashboards/cdk-erigon-performance.json" | replace "${DS_PROMETHEUS}" "prometheus" | indent 4 }}
 {{- end }}
