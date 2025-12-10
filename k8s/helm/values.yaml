@@ -294,6 +294,14 @@ rpc:
 # -- kube-prometheus-stack subchart configuration
 # Only applied when monitoring.prometheus.enabled is true
 prometheus:
+  # CRD configuration for first-time installation
+  crds:
+    enabled: true
+    # Automatically install/upgrade CRDs via Helm hook (idempotent)
+    # This enables seamless cold-start deployment on fresh clusters
+    upgradeJob:
+      enabled: true
+
   # Prometheus Operator configuration
   prometheusOperator:
     enabled: true
