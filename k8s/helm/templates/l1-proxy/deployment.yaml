@@ -53,17 +53,13 @@ spec:
         resources:
           {{- toYaml .Values.l1Proxy.resources | nindent 10 }}
         livenessProbe:
-          httpGet:
-            path: /health
+          tcpSocket:
             port: http
-            scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 10
         readinessProbe:
-          httpGet:
-            path: /health
+          tcpSocket:
             port: http
-            scheme: HTTP
           initialDelaySeconds: 2
           periodSeconds: 5
       volumes:
