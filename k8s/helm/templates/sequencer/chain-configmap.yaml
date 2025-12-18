@@ -52,13 +52,19 @@ data:
     zkevm.data-stream-port: {{ printf "%.0f" .Values.sequencer.chainConfig.dataStreamPort }}
     {{- if .Values.sequencer.nats.embedded }}
     zkevm.data-stream-host: localhost
-    {{- end }}
+    zkevm.data-stream-nats: true
     zkevm.data-stream-nats-host: {{ .Values.sequencer.chainConfig.dataStreamNatsHost }}
     zkevm.data-stream-nats-port: {{ printf "%.0f" .Values.sequencer.chainConfig.dataStreamNatsPort }}
+    {{- end }}
     externalcl: true
     http.api: [eth, debug, net, trace, web3, erigon, zkevm]
     http.addr: 0.0.0.0
     http.vhosts: any
     http.corsdomain: any
     ws: true
+    {{- if .Values.monitoring.enabled }}
+    metrics: true
+    metrics.addr: 0.0.0.0
+    metrics.port: 6060
+    {{- end }}
 {{- end }}

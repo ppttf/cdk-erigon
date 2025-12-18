@@ -18,3 +18,10 @@ sources:
 
 maintainers:
   - name: Gateway.fm
+
+dependencies:
+  - name: kube-prometheus-stack
+    version: "~80.0.0"
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: monitoring.prometheus.enabled
+    alias: prometheus

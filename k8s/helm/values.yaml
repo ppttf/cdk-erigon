@@ -19,6 +19,29 @@ nameOverride: ""
 # -- Override full name
 fullnameOverride: ""
 
+# -- Global monitoring configuration
+monitoring:
+  # -- Enable monitoring for all components
+  enabled: false
+  # -- ServiceMonitor configuration (requires Prometheus Operator)
+  serviceMonitor:
+    # -- Enable ServiceMonitor resources
+    enabled: true
+    # -- Scrape interval
+    interval: 30s
+    # -- Scrape timeout
+    scrapeTimeout: 10s
+  # -- Grafana dashboard configuration
+  grafana:
+    # -- Dashboard provisioning
+    dashboards:
+      # -- Enable Grafana dashboard ConfigMaps
+      enabled: false
+  # -- Prometheus stack configuration
+  prometheus:
+    # -- Enable kube-prometheus-stack (Prometheus + Grafana)
+    enabled: false
+
 # -- L1 RPC cache proxy (shared deployment)
 l1Proxy:
   # -- Enable shared L1 RPC cache proxy
@@ -78,6 +101,26 @@ sequencer:
       storageClass: ""
       # -- Size of NATS storage
       size: 10Gi
+
+    # -- NATS monitoring configuration
+    monitoring:
+      # -- Enable NATS Prometheus metrics endpoint
+      enabled: false
+      # -- Monitoring HTTP port (JSON endpoints)
+      port: 8222
+      # -- prometheus-nats-exporter sidecar configuration
+      exporter:
+        image:
+          repository: natsio/prometheus-nats-exporter
+          tag: "0.18.0"
+          pullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
 
   # -- Blockchain data persistence
   persistence:
@@ -260,3 +303,67 @@ rpc:
     gasPriceFactor: 0.12
     # -- Torrent port (different from sequencer)
     torrentPort: 42071
+
+# -- kube-prometheus-stack subchart configuration
+# Only applied when monitoring.prometheus.enabled is true
+prometheus:
+  # CRD configuration for first-time installation
+  crds:
+    enabled: true
+    # Automatically install/upgrade CRDs via Helm hook (idempotent)
+    # This enables seamless cold-start deployment on fresh clusters
+    upgradeJob:
+      enabled: true
+
+  # Prometheus Operator configuration
+  prometheusOperator:
+    enabled: true
+  
+  # Prometheus instance configuration  
+  prometheus:
+    enabled: true
+    prometheusSpec:
+      serviceMonitorSelectorNilUsesHelmValues: false
+      podMonitorSelectorNilUsesHelmValues: false
+      retention: 7d
+      resources:
+        requests:
+          memory: 2Gi
+          cpu: 500m
+        limits:
+          memory: 4Gi
+          cpu: 1000m
+  
+  # Grafana configuration
+  grafana:
+    enabled: true
+    adminPassword: admin
+    # Service configuration - NodePort for local access
+    service:
+      type: NodePort
+      nodePort: 30300
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+        labelValue: "1"
+        searchNamespace: ALL
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 100m
+      limits:
+        memory: 512Mi
+        cpu: 200m
+  
+  # Alertmanager (optional)
+  alertmanager:
+    enabled: false
+  
+  # Node exporter
+  nodeExporter:
+    enabled: true
+  
+  # kube-state-metrics
+  kubeStateMetrics:
+    enabled: true

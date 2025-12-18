@@ -1,0 +1,13 @@
+# Local secrets for cdk-erigon (GITIGNORED - do not commit)
+# Copy this file to values-local.yaml and fill in your API keys
+#
+# Usage: helm install cdk-erigon k8s/helm -f k8s/helm/values-dev.yaml -f k8s/helm/values-local.yaml
+
+# -- L1 RPC URL (required)
+sequencer:
+  chainConfig:
+    l1RpcUrl: "YOUR_L1_RPC_URL_HERE"
+
+rpc:
+  chainConfig:
+    l1RpcUrl: "YOUR_L1_RPC_URL_HERE"

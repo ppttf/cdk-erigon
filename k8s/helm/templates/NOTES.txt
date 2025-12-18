@@ -29,5 +29,11 @@ To view RPC logs:
 
 {{- end }}
 
+{{- if and .Values.monitoring.enabled .Values.monitoring.prometheus.enabled }}
+
+Grafana: http://localhost:30300 (admin/admin)
+Prometheus: kubectl port-forward -n {{ .Release.Namespace }} svc/{{ .Release.Name }}-prometheus-prometheus 9090:9090
+{{- end }}
+
 For more information about this chart, visit:
   https://github.com/0xPolygon/cdk-erigon/tree/main/k8s

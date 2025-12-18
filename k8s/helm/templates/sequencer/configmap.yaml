@@ -11,6 +11,10 @@ data:
     port: 4222
     server_name: {{ include "cdk-erigon.fullname" . }}-sequencer
 
+    {{- if .Values.sequencer.nats.monitoring.enabled }}
+    http_port: {{ .Values.sequencer.nats.monitoring.port }}
+    {{- end }}
+
     jetstream {
       store_dir: "/data/nats"
       max_memory_store: {{ printf "%.0f" .Values.sequencer.nats.maxMemoryStore }}

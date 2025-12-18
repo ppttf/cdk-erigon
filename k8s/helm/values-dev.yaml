@@ -1,8 +1,8 @@
 # Local development overrides for cdk-erigon
-# Usage: helm install cdk-erigon k8s/helm -f k8s/helm/values-local.yaml
+# Usage: helm install cdk-erigon k8s/helm -f k8s/helm/values-dev.yaml -f k8s/helm/values-local.yaml
 #
 # For Bali testnet locally:
-#   helm install cdk-erigon k8s/helm -f k8s/helm/values-local.yaml -f k8s/helm/values-bali.yaml
+#   helm install cdk-erigon k8s/helm -f k8s/helm/values-dev.yaml -f k8s/helm/values-bali.yaml -f k8s/helm/values-local.yaml
 
 # -- Use local image (no registry pull)
 image:
@@ -15,14 +15,14 @@ sequencer:
   enabled: true
   replicas: 1
 
-  # -- Lower resources for local development
+  # -- Resources for local development
   resources:
     requests:
-      memory: 1Gi
+      memory: 2Gi
       cpu: 500m
     limits:
-      memory: 2Gi
-      cpu: 1000m
+      memory: 4Gi
+      cpu: 2000m
 
   # -- Reduced storage for local
   persistence:
@@ -51,9 +51,15 @@ sequencer:
         memory: 64Mi
         cpu: 100m
 
+# -- Enable monitoring and Grafana dashboards for local development
+monitoring:
+  enabled: true
+  grafana:
+    dashboards:
+      enabled: true
+
 # -- RPC configuration for local development
 rpc:
-  enabled: false
   replicas: 1
 
   resources:

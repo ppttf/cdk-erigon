@@ -1,0 +1,20 @@
+{{- if and .Values.rpc.enabled .Values.monitoring.enabled .Values.monitoring.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "cdk-erigon.fullname" . }}-rpc
+  labels:
+    {{- include "cdk-erigon.labels" . | nindent 4 }}
+    component: rpc-monitoring
+spec:
+  selector:
+    matchLabels:
+      {{- include "cdk-erigon.selectorLabels" . | nindent 6 }}
+      component: rpc
+  endpoints:
+  - port: metrics
+    interval: {{ .Values.monitoring.serviceMonitor.interval }}
+    scrapeTimeout: {{ .Values.monitoring.serviceMonitor.scrapeTimeout }}
+    path: /debug/metrics/prometheus
+    scheme: http
+{{- end }}

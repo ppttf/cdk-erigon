@@ -41,8 +41,9 @@ data:
     zkevm.l2-datastreamer-url: {{ .Values.rpc.chainConfig.l2DatastreamerUrl }}
 
     # NATS seed (sequencer connection)
-    zkevm.l2-nats-seed-host: {{ .Values.rpc.chainConfig.natsSeedHost }}
-    zkevm.l2-nats-seed-port: {{ .Values.rpc.chainConfig.natsSeedPort | int64 }}
+    {{- if and .Values.rpc.chainConfig.natsSeedHost .Values.rpc.chainConfig.natsSeedPort }}
+    zkevm.l2-nats-url: nats://{{ .Values.rpc.chainConfig.natsSeedHost }}:{{ .Values.rpc.chainConfig.natsSeedPort | int64 }}
+    {{- end }}
 
     {{- if .Values.rpc.nats.enabled }}
     # Local NATS for downstream consumers
@@ -71,4 +72,11 @@ data:
     
     # Network configuration
     torrent.port: {{ .Values.rpc.chainConfig.torrentPort | int64 }}
+    
+    {{- if .Values.monitoring.enabled }}
+    # Prometheus metrics
+    metrics: true
+    metrics.addr: 0.0.0.0
+    metrics.port: 6060
+    {{- end }}
 {{- end }}

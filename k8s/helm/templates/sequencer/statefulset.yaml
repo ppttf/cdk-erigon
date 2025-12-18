@@ -50,10 +50,20 @@ spec:
         - name: nats
           containerPort: 4222
           protocol: TCP
+        {{- if .Values.sequencer.nats.monitoring.enabled }}
+        - name: nats-mon
+          containerPort: {{ .Values.sequencer.nats.monitoring.port }}
+          protocol: TCP
+        {{- end }}
         {{- end }}
         {{- if .Values.sequencer.chainConfig.enabled }}
         - name: datastream
           containerPort: {{ .Values.sequencer.chainConfig.dataStreamPort | default 6900 }}
+          protocol: TCP
+        {{- end }}
+        {{- if .Values.monitoring.enabled }}
+        - name: metrics
+          containerPort: 6060
           protocol: TCP
         {{- end }}
         volumeMounts:
@@ -77,6 +87,22 @@ spec:
         {{- end }}
         resources:
           {{- toYaml .Values.sequencer.resources | nindent 10 }}
+      {{- if and .Values.sequencer.nats.embedded .Values.sequencer.nats.monitoring.enabled }}
+      - name: nats-exporter
+        image: "{{ .Values.sequencer.nats.monitoring.exporter.image.repository }}:{{ .Values.sequencer.nats.monitoring.exporter.image.tag }}"
+        imagePullPolicy: {{ .Values.sequencer.nats.monitoring.exporter.image.pullPolicy }}
+        args:
+          - "-varz"
+          - "-jsz=all"
+          - "-connz"
+          - "http://localhost:{{ .Values.sequencer.nats.monitoring.port }}"
+        ports:
+          - name: nats-metrics
+            containerPort: 7777
+            protocol: TCP
+        resources:
+          {{- toYaml .Values.sequencer.nats.monitoring.exporter.resources | nindent 10 }}
+      {{- end }}
   {{- if or .Values.sequencer.persistence.enabled (and .Values.sequencer.nats.embedded .Values.sequencer.nats.persistence.enabled) }}
   volumeClaimTemplates:
   {{- if .Values.sequencer.persistence.enabled }}
