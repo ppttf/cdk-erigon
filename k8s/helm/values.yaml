@@ -106,8 +106,21 @@ sequencer:
     monitoring:
       # -- Enable NATS Prometheus metrics endpoint
       enabled: false
-      # -- Monitoring HTTP port
+      # -- Monitoring HTTP port (JSON endpoints)
       port: 8222
+      # -- prometheus-nats-exporter sidecar configuration
+      exporter:
+        image:
+          repository: natsio/prometheus-nats-exporter
+          tag: "0.18.0"
+          pullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
 
   # -- Blockchain data persistence
   persistence:
@@ -325,6 +338,10 @@ prometheus:
   grafana:
     enabled: true
     adminPassword: admin
+    # Service configuration - NodePort for local access
+    service:
+      type: NodePort
+      nodePort: 30300
     sidecar:
       dashboards:
         enabled: true

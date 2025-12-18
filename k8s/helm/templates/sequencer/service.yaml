@@ -23,6 +23,10 @@ spec:
     port: {{ .Values.sequencer.nats.monitoring.port }}
     targetPort: nats-mon
     protocol: TCP
+  - name: nats-metrics
+    port: 7777
+    targetPort: nats-metrics
+    protocol: TCP
   {{- end }}
   {{- end }}
   {{- if .Values.sequencer.chainConfig.enabled }}

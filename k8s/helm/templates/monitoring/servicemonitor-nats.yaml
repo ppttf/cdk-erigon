@@ -1,4 +1,4 @@
-{{- if and .Values.sequencer.enabled .Values.sequencer.nats.embedded .Values.sequencer.nats.monitoring.enabled }}
+{{- if and .Values.sequencer.enabled .Values.sequencer.nats.embedded .Values.sequencer.nats.monitoring.enabled .Values.monitoring.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -12,7 +12,7 @@ spec:
       {{- include "cdk-erigon.selectorLabels" . | nindent 6 }}
       component: sequencer
   endpoints:
-  - port: nats-mon
+  - port: nats-metrics
     interval: 30s
     path: /metrics
     scheme: http

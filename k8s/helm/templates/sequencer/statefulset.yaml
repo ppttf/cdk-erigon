@@ -87,6 +87,22 @@ spec:
         {{- end }}
         resources:
           {{- toYaml .Values.sequencer.resources | nindent 10 }}
+      {{- if and .Values.sequencer.nats.embedded .Values.sequencer.nats.monitoring.enabled }}
+      - name: nats-exporter
+        image: "{{ .Values.sequencer.nats.monitoring.exporter.image.repository }}:{{ .Values.sequencer.nats.monitoring.exporter.image.tag }}"
+        imagePullPolicy: {{ .Values.sequencer.nats.monitoring.exporter.image.pullPolicy }}
+        args:
+          - "-varz"
+          - "-jsz=all"
+          - "-connz"
+          - "http://localhost:{{ .Values.sequencer.nats.monitoring.port }}"
+        ports:
+          - name: nats-metrics
+            containerPort: 7777
+            protocol: TCP
+        resources:
+          {{- toYaml .Values.sequencer.nats.monitoring.exporter.resources | nindent 10 }}
+      {{- end }}
   {{- if or .Values.sequencer.persistence.enabled (and .Values.sequencer.nats.embedded .Values.sequencer.nats.persistence.enabled) }}
   volumeClaimTemplates:
   {{- if .Values.sequencer.persistence.enabled }}

@@ -11,4 +11,6 @@ data:
 {{ .Files.Get "dashboards/nats-jetstream.json" | replace "${DS__NATS-PROMETHEUS}" "prometheus" | indent 4 }}
   cdk-erigon-performance.json: |-
 {{ .Files.Get "dashboards/cdk-erigon-performance.json" | replace "${DS_PROMETHEUS}" "prometheus" | indent 4 }}
+  cdk-erigon-sync.json: |-
+{{ .Files.Get "dashboards/cdk-erigon-sync.json" | replace "${DS_PROMETHEUS}" "prometheus" | indent 4 }}
 {{- end }}

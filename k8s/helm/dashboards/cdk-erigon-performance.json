@@ -104,7 +104,8 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "chain_execution_current_block{namespace=\"$namespace\",component=\"$component\"}",
+          "expr": "sync{stage=\"execution\"}",
+          "legendFormat": "Execution Block",
           "refId": "A"
         }
       ],
