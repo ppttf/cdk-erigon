@@ -1,0 +1,44 @@
+{{- if .Values.sequencer.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cdk-erigon.fullname" . }}-sequencer
+  labels:
+    {{- include "cdk-erigon.labels" . | nindent 4 }}
+    component: sequencer
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    {{- include "cdk-erigon.selectorLabels" . | nindent 4 }}
+    component: sequencer
+  ports:
+  {{- if .Values.sequencer.nats.embedded }}
+  - name: nats
+    port: 4222
+    targetPort: nats
+    protocol: TCP
+  {{- if .Values.sequencer.nats.monitoring.enabled }}
+  - name: nats-mon
+    port: {{ .Values.sequencer.nats.monitoring.port }}
+    targetPort: nats-mon
+    protocol: TCP
+  - name: nats-metrics
+    port: 7777
+    targetPort: nats-metrics
+    protocol: TCP
+  {{- end }}
+  {{- end }}
+  {{- if .Values.sequencer.chainConfig.enabled }}
+  - name: datastream
+    port: {{ .Values.sequencer.chainConfig.dataStreamPort | default 6900 }}
+    targetPort: datastream
+    protocol: TCP
+  {{- end }}
+  {{- if .Values.monitoring.enabled }}
+  - name: metrics
+    port: 6060
+    targetPort: metrics
+    protocol: TCP
+  {{- end }}
+{{- end }}

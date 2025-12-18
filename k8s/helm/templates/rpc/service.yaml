@@ -1,0 +1,79 @@
+{{- if .Values.rpc.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cdk-erigon.fullname" . }}-rpc
+  labels:
+    {{- include "cdk-erigon.labels" . | nindent 4 }}
+    component: rpc
+spec:
+  type: {{ .Values.rpc.service.type }}
+  ports:
+  - name: http
+    port: 8545
+    targetPort: http
+    protocol: TCP
+  - name: ws
+    port: 8546
+    targetPort: ws
+    protocol: TCP
+  - name: private-api
+    port: 9093
+    targetPort: private-api
+    protocol: TCP
+  {{- if .Values.rpc.nats.enabled }}
+  - name: nats
+    port: {{ .Values.rpc.chainConfig.dataStreamNatsPort }}
+    targetPort: nats
+    protocol: TCP
+  {{- end }}
+  {{- if .Values.monitoring.enabled }}
+  - name: metrics
+    port: 6060
+    targetPort: metrics
+    protocol: TCP
+  {{- end }}
+  selector:
+    {{- include "cdk-erigon.selectorLabels" . | nindent 4 }}
+    component: rpc
+---
+# Headless service for StatefulSet DNS
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cdk-erigon.fullname" . }}-rpc-headless
+  labels:
+    {{- include "cdk-erigon.labels" . | nindent 4 }}
+    component: rpc
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - name: http
+    port: 8545
+    targetPort: http
+    protocol: TCP
+  - name: ws
+    port: 8546
+    targetPort: ws
+    protocol: TCP
+  - name: private-api
+    port: 9093
+    targetPort: private-api
+    protocol: TCP
+  {{- if .Values.rpc.nats.enabled }}
+  - name: nats
+    port: {{ .Values.rpc.chainConfig.dataStreamNatsPort }}
+    targetPort: nats
+    protocol: TCP
+  {{- end }}
+  {{- if .Values.monitoring.enabled }}
+  - name: metrics
+    port: 6060
+    targetPort: metrics
+    protocol: TCP
+  {{- end }}
+  selector:
+    {{- include "cdk-erigon.selectorLabels" . | nindent 4 }}
+    component: rpc
+{{- end }}

@@ -1,0 +1,61 @@
+suite: test NATS ServiceMonitor
+templates:
+  - monitoring/servicemonitor-nats.yaml
+tests:
+  - it: should not create ServiceMonitor when monitoring disabled
+    set:
+      sequencer.nats.monitoring.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create ServiceMonitor when monitoring enabled
+    set:
+      sequencer.nats.monitoring.enabled: true
+    asserts:
+      - isKind:
+          of: ServiceMonitor
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-cdk-erigon-nats
+
+  - it: should configure correct selector labels
+    set:
+      sequencer.nats.monitoring.enabled: true
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels.component
+          value: sequencer
+
+  - it: should configure metrics endpoint
+    set:
+      sequencer.nats.monitoring.enabled: true
+    asserts:
+      - equal:
+          path: spec.endpoints[0].port
+          value: nats-mon
+      - equal:
+          path: spec.endpoints[0].interval
+          value: 30s
+      - equal:
+          path: spec.endpoints[0].path
+          value: /metrics
+      - equal:
+          path: spec.endpoints[0].scheme
+          value: http
+
+  - it: should not create when sequencer disabled
+    set:
+      sequencer.enabled: false
+      sequencer.nats.monitoring.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not create when NATS not embedded
+    set:
+      sequencer.nats.embedded: false
+      sequencer.nats.monitoring.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0

@@ -1,0 +1,27 @@
+apiVersion: v2
+name: cdk-erigon
+description: CDK Erigon blockchain node with embedded NATS JetStream
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
+keywords:
+  - blockchain
+  - ethereum
+  - zkevm
+  - polygon
+  - nats
+
+home: https://github.com/0xPolygonHermez/cdk-erigon
+sources:
+  - https://github.com/0xPolygonHermez/cdk-erigon
+
+maintainers:
+  - name: Gateway.fm
+
+dependencies:
+  - name: kube-prometheus-stack
+    version: "~80.0.0"
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: monitoring.prometheus.enabled
+    alias: prometheus

@@ -1,0 +1,37 @@
+# CI/CD testing overrides for cdk-erigon
+# Optimized for fast, minimal resource testing
+# Usage: helm install cdk-erigon k8s/helm -f k8s/helm/values-testing.yaml
+
+# -- Use test image
+image:
+  repository: cdk-erigon
+  tag: test
+  pullPolicy: IfNotPresent
+
+# -- Sequencer configuration for CI/CD
+sequencer:
+  enabled: true
+  replicas: 1
+
+  # -- Minimal resources for CI/CD
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
+      cpu: 500m
+
+  # -- Minimal storage for testing
+  persistence:
+    enabled: true
+    size: 1Gi
+
+  nats:
+    embedded: true
+    persistence:
+      enabled: false
+
+# -- Disable RPC in CI/CD tests
+rpc:
+  enabled: false

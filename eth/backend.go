@@ -997,6 +997,8 @@ func New(ctx context.Context, stack *node.Node, config *ethconfig.Config, logger
 			natsConfig := natsstream.Config{
 				Host:             config.DataStreamNatsHost,
 				Port:             config.DataStreamNatsPort,
+				HTTPHost:         "0.0.0.0",
+				HTTPPort:         8222,
 				ServerName:       fmt.Sprintf("erigon-nats-chain-%d", config.NetworkID),
 				ClusterName:      fmt.Sprintf("erigon-cluster-chain-%d", config.NetworkID),
 				JetStreamEnabled: true,

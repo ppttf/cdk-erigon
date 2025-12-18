@@ -451,6 +451,117 @@ protobuf:
 	protoc -I=zk/legacy_executor_verifier/proto --go_out=zk/legacy_executor_verifier/proto zk/legacy_executor_verifier/proto/process_batch.proto
 	protoc -I=zk/datastream/proto --go_out=zk/datastream/proto zk/datastream/proto/datastream.proto
 
+# Helm/Kubernetes targets
+HELM_DIR = k8s/helm
+HELM_RELEASE = cdk-erigon
+HELM_NAMESPACE = cdk-erigon
+HELM_VALUES_DEV = $(HELM_DIR)/values-dev.yaml
+HELM_VALUES_NETWORK = $(HELM_DIR)/values-bali.yaml
+HELM_VALUES_LOCAL = $(wildcard $(HELM_DIR)/values-local.yaml)
+PROMETHEUS_CRD_VERSION = v0.82.2
+PROMETHEUS_CRD_BASE = https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/$(PROMETHEUS_CRD_VERSION)/example/prometheus-operator-crd/monitoring.coreos.com
+
+# Docker image names
+DOCKER_CDK_IMAGE = cdk-erigon:local
+DOCKER_L1PROXY_IMAGE = cdk-erigon-l1-proxy:local
+
+## docker-build:                       build cdk-erigon Docker image
+.PHONY: docker-build
+docker-build:
+	docker build -t $(DOCKER_CDK_IMAGE) -f k8s/Dockerfile .
+
+## docker-build-l1proxy:               build l1-proxy Docker image
+.PHONY: docker-build-l1proxy
+docker-build-l1proxy:
+	docker build -t $(DOCKER_L1PROXY_IMAGE) -f k8s/l1-proxy/Dockerfile .
+
+## docker-build-all:                   build all Docker images
+.PHONY: docker-build-all
+docker-build-all: docker-build docker-build-l1proxy
+
+## helm-deps:                         update helm chart dependencies
+.PHONY: helm-deps
+helm-deps:
+	helm dependency update $(HELM_DIR)
+
+## helm-crds:                         install Prometheus Operator CRDs (required before first helm install)
+.PHONY: helm-crds
+helm-crds:
+	@echo "Installing Prometheus Operator CRDs..."
+	kubectl apply --server-side -f $(PROMETHEUS_CRD_BASE)_servicemonitors.yaml
+	kubectl apply --server-side -f $(PROMETHEUS_CRD_BASE)_prometheuses.yaml
+	kubectl apply --server-side -f $(PROMETHEUS_CRD_BASE)_prometheusrules.yaml
+	kubectl apply --server-side -f $(PROMETHEUS_CRD_BASE)_alertmanagers.yaml
+	kubectl apply --server-side -f $(PROMETHEUS_CRD_BASE)_podmonitors.yaml
+	kubectl apply --server-side -f $(PROMETHEUS_CRD_BASE)_probes.yaml
+	kubectl apply --server-side -f $(PROMETHEUS_CRD_BASE)_alertmanagerconfigs.yaml
+	kubectl apply --server-side -f $(PROMETHEUS_CRD_BASE)_thanosrulers.yaml
+	kubectl apply --server-side -f $(PROMETHEUS_CRD_BASE)_scrapeconfigs.yaml
+	kubectl apply --server-side -f $(PROMETHEUS_CRD_BASE)_prometheusagents.yaml
+	@echo "CRDs installed successfully"
+
+## helm-up:                           build images and deploy full stack with monitoring
+.PHONY: helm-up
+helm-up: docker-build-all helm-deps helm-crds
+	kubectl get ns $(HELM_NAMESPACE) 2>/dev/null || kubectl create ns $(HELM_NAMESPACE)
+	helm upgrade --install $(HELM_RELEASE) $(HELM_DIR) -n $(HELM_NAMESPACE) \
+		-f $(HELM_VALUES_NETWORK) \
+		-f $(HELM_VALUES_DEV) \
+		$(if $(HELM_VALUES_LOCAL),-f $(HELM_VALUES_LOCAL)) \
+		--set monitoring.enabled=true \
+		--set monitoring.prometheus.enabled=true \
+		--set monitoring.grafana.dashboards.enabled=true \
+		--set sequencer.nats.monitoring.enabled=true
+	@echo ""
+	@echo "Deployment complete. To access Grafana:"
+	@echo "  kubectl port-forward -n $(HELM_NAMESPACE) svc/$(HELM_RELEASE)-grafana 3000:80"
+	@echo "  Open http://localhost:3000 (admin/admin)"
+
+## helm-up-lite:                      build images and deploy without monitoring stack
+.PHONY: helm-up-lite
+helm-up-lite: docker-build-all helm-deps
+	kubectl get ns $(HELM_NAMESPACE) 2>/dev/null || kubectl create ns $(HELM_NAMESPACE)
+	helm upgrade --install $(HELM_RELEASE) $(HELM_DIR) -n $(HELM_NAMESPACE) \
+		-f $(HELM_VALUES_NETWORK) \
+		-f $(HELM_VALUES_DEV) \
+		$(if $(HELM_VALUES_LOCAL),-f $(HELM_VALUES_LOCAL))
+
+## helm-down:                         uninstall helm release
+.PHONY: helm-down
+helm-down:
+	helm uninstall $(HELM_RELEASE) -n $(HELM_NAMESPACE) 2>/dev/null || true
+
+## helm-clean:                        full cleanup (release, PVCs, namespace, cluster resources)
+.PHONY: helm-clean
+helm-clean: helm-down
+	kubectl delete pvc --all -n $(HELM_NAMESPACE) 2>/dev/null || true
+	kubectl get clusterrole,clusterrolebinding -o name | grep $(HELM_RELEASE) | xargs -r kubectl delete 2>/dev/null || true
+	kubectl delete mutatingwebhookconfiguration,validatingwebhookconfiguration -l app.kubernetes.io/instance=$(HELM_RELEASE) 2>/dev/null || true
+	kubectl get svc -n kube-system -o name | grep $(HELM_RELEASE) | xargs -r kubectl delete -n kube-system 2>/dev/null || true
+	kubectl delete ns $(HELM_NAMESPACE) 2>/dev/null || true
+	@echo "Cleanup complete"
+
+## helm-status:                       show deployment status
+.PHONY: helm-status
+helm-status:
+	@echo "=== Helm Release ==="
+	helm list -n $(HELM_NAMESPACE) 2>/dev/null || echo "No release found"
+	@echo ""
+	@echo "=== Pods ==="
+	kubectl get pods -n $(HELM_NAMESPACE) 2>/dev/null || echo "Namespace not found"
+	@echo ""
+	@echo "=== Services ==="
+	kubectl get svc -n $(HELM_NAMESPACE) 2>/dev/null || echo "Namespace not found"
+
+## helm-grafana:                      port-forward Grafana (background)
+.PHONY: helm-grafana
+helm-grafana:
+	@pkill -f "port-forward.*$(HELM_RELEASE)-grafana" 2>/dev/null || true
+	@echo "Starting Grafana port-forward..."
+	@kubectl port-forward -n $(HELM_NAMESPACE) svc/$(HELM_RELEASE)-grafana 3000:80 &
+	@sleep 2
+	@echo "Grafana available at http://localhost:3000 (admin/admin)"
+
 ## help:                              print commands help
 help	:	Makefile
 	@sed -n 's/^##//p' $<

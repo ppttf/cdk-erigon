@@ -1,0 +1,19 @@
+# Minimal test configuration
+# Used for basic validation and TDD
+
+sequencer:
+  enabled: true
+  replicas: 1
+  nats:
+    embedded: true
+    persistence:
+      enabled: false
+  persistence:
+    enabled: false
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+
+rpc:
+  enabled: false

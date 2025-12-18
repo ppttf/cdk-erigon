@@ -1,0 +1,3 @@
+# Helm dependency charts
+charts/
+Chart.lock

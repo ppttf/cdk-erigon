@@ -1,0 +1,160 @@
+suite: test rpc chain configmap
+templates:
+  - rpc/chain-configmap.yaml
+
+tests:
+  - it: should render a ConfigMap when rpc is enabled
+    set:
+      rpc.enabled: true
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-cdk-erigon-rpc-chain
+
+  - it: should not render when rpc is disabled
+    set:
+      rpc.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should have component label
+    set:
+      rpc.enabled: true
+    asserts:
+      - equal:
+          path: metadata.labels.component
+          value: rpc
+
+  - it: should configure chain name
+    set:
+      rpc.enabled: true
+      rpc.chainConfig.chain: hermez-bali
+    asserts:
+      - matchRegex:
+          path: data["erigon.yaml"]
+          pattern: "chain: hermez-bali"
+
+  - it: should configure L2 chain ID
+    set:
+      rpc.enabled: true
+      rpc.chainConfig.chainId: 2440
+    asserts:
+      - matchRegex:
+          path: data["erigon.yaml"]
+          pattern: "zkevm.l2-chain-id: 2440"
+
+  - it: should configure NATS seed host
+    set:
+      rpc.enabled: true
+      rpc.chainConfig.natsSeedHost: sequencer.default.svc.cluster.local
+    asserts:
+      - matchRegex:
+          path: data["erigon.yaml"]
+          pattern: "zkevm.l2-nats-seed-host: sequencer.default.svc.cluster.local"
+
+  - it: should configure NATS seed port
+    set:
+      rpc.enabled: true
+      rpc.chainConfig.natsSeedPort: 4222
+    asserts:
+      - matchRegex:
+          path: data["erigon.yaml"]
+          pattern: "zkevm.l2-nats-seed-port: 4222"
+
+  - it: should include local NATS config when nats is enabled
+    set:
+      rpc.enabled: true
+      rpc.nats.enabled: true
+      rpc.chainConfig.dataStreamNatsHost: "0.0.0.0"
+      rpc.chainConfig.dataStreamNatsPort: 4223
+    asserts:
+      - matchRegex:
+          path: data["erigon.yaml"]
+          pattern: "zkevm.data-stream-nats-host: 0.0.0.0"
+      - matchRegex:
+          path: data["erigon.yaml"]
+          pattern: "zkevm.data-stream-nats-port: 4223"
+
+  - it: should not include local NATS config when nats is disabled
+    set:
+      rpc.enabled: true
+      rpc.nats.enabled: false
+    asserts:
+      - notMatchRegex:
+          path: data["erigon.yaml"]
+          pattern: "zkevm.data-stream-nats-host"
+
+  - it: should disable txpool
+    set:
+      rpc.enabled: true
+    asserts:
+      - matchRegex:
+          path: data["erigon.yaml"]
+          pattern: "txpool.disable: true"
+
+  - it: should enable HTTP API
+    set:
+      rpc.enabled: true
+    asserts:
+      - matchRegex:
+          path: data["erigon.yaml"]
+          pattern: "http: true"
+      - matchRegex:
+          path: data["erigon.yaml"]
+          pattern: "http.addr: 0.0.0.0"
+      - matchRegex:
+          path: data["erigon.yaml"]
+          pattern: "http.port: 8545"
+
+  - it: should enable WebSocket
+    set:
+      rpc.enabled: true
+    asserts:
+      - matchRegex:
+          path: data["erigon.yaml"]
+          pattern: "ws: true"
+      - matchRegex:
+          path: data["erigon.yaml"]
+          pattern: "ws.port: 8546"
+
+  - it: should configure contract addresses
+    set:
+      rpc.enabled: true
+      rpc.chainConfig.addressSequencer: "0x1234567890abcdef"
+      rpc.chainConfig.addressZkevm: "0xabcdef1234567890"
+    asserts:
+      - matchRegex:
+          path: data["erigon.yaml"]
+          pattern: 'zkevm.address-sequencer: "0x1234567890abcdef"'
+      - matchRegex:
+          path: data["erigon.yaml"]
+          pattern: 'zkevm.address-zkevm: "0xabcdef1234567890"'
+
+  - it: should configure L1 RPC URL
+    set:
+      rpc.enabled: true
+      rpc.chainConfig.l1RpcUrl: "https://eth-sepolia.example.com"
+    asserts:
+      - matchRegex:
+          path: data["erigon.yaml"]
+          pattern: "zkevm.l1-rpc-url: https://eth-sepolia.example.com"
+
+  - it: should configure different torrent port than sequencer
+    set:
+      rpc.enabled: true
+      rpc.chainConfig.torrentPort: 42071
+    asserts:
+      - matchRegex:
+          path: data["erigon.yaml"]
+          pattern: "torrent.port: 42071"
+
+  - it: should enable external consensus layer
+    set:
+      rpc.enabled: true
+    asserts:
+      - matchRegex:
+          path: data["erigon.yaml"]
+          pattern: "externalcl: true"

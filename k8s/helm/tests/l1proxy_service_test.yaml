@@ -1,0 +1,55 @@
+suite: L1 Proxy Service
+templates:
+  - l1-proxy/service.yaml
+tests:
+  - it: should not create service when l1Proxy.enabled is false
+    set:
+      l1Proxy.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create service when l1Proxy.enabled is true
+    set:
+      l1Proxy.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-cdk-erigon-l1-proxy
+
+  - it: should configure service type as ClusterIP
+    set:
+      l1Proxy.enabled: true
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+
+  - it: should expose port 6969
+    set:
+      l1Proxy.enabled: true
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 6969
+      - equal:
+          path: spec.ports[0].targetPort
+          value: http
+      - equal:
+          path: spec.ports[0].protocol
+          value: TCP
+
+  - it: should have correct selector labels
+    set:
+      l1Proxy.enabled: true
+    asserts:
+      - isSubset:
+          path: spec.selector
+          content:
+            app.kubernetes.io/name: cdk-erigon
+            app.kubernetes.io/instance: RELEASE-NAME
+            app.kubernetes.io/component: l1-proxy
